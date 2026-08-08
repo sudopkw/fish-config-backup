@@ -1,4 +1,3 @@
-
 # ---------------------------------------------------------
 # FISH-GREETING
 # ---------------------------------------------------------
@@ -67,7 +66,6 @@ function fish_greeting
         set -a info_rows "💉 TOR: FALSE"
     end
 
-    # Find widest visible content
     set -l content_width 0
 
     for row in $info_rows
@@ -99,17 +97,14 @@ function fish_greeting
         set content_width $greeting_category_length
     end
 
-    # Four spaces total: two left + two right
     set -l box_width (math $content_width + 4)
     set -l border (string repeat -n $box_width "─")
 
     printf "\n"
 
-    # Top border
     set_color $accent
     printf "╭%s╮\n" "$border"
 
-    # INFO category
     set_color $accent
     printf "│  ── INFO"
 
@@ -123,7 +118,6 @@ function fish_greeting
     set_color $accent
     printf "  │\n"
 
-    # Info rows
     for row in $info_rows
         set -l length (string length --visible -- "$row")
 
@@ -147,7 +141,6 @@ function fish_greeting
         printf "  │\n"
     end
 
-    # Blank separator
     set_color $accent
     printf "│"
 
@@ -157,7 +150,6 @@ function fish_greeting
     set_color $accent
     printf "│\n"
 
-    # GREETING category
     set_color $accent
     printf "│  ── GREETING"
 
@@ -171,7 +163,6 @@ function fish_greeting
     set_color $accent
     printf "  │\n"
 
-    # Greeting
     set -l quote_length (string length --visible -- "$quote")
     set -l quote_padding (math $content_width - $quote_length)
 
@@ -188,7 +179,6 @@ function fish_greeting
     set_color $accent
     printf "  │\n"
 
-    # Bottom border
     set_color $accent
     printf "╰%s╯\n" "$border"
 
@@ -198,17 +188,11 @@ function fish_greeting
 end
 
 # ---------------------------------------------------------
-# ALIASES
-# ---------------------------------------------------------
-alias ff='fzf --preview "bat --style=numbers --color=always {}"'
-
-alias !h='!help'
-
-# ---------------------------------------------------------
 # TOR
 # ---------------------------------------------------------
 
-function !tor --description 'Start the TOR service'
+function !tor
+    # description: Start the TOR service
     # category: TOR
     sudo systemctl start tor
     if test $status -eq 0
@@ -218,7 +202,8 @@ function !tor --description 'Start the TOR service'
     end
 end
 
-function !ktor --description "Kill TOR Service"
+function !ktor
+    # description: Kill TOR Service
     # category: TOR
     sudo systemctl stop tor
     if test $status -eq 0
@@ -228,23 +213,27 @@ function !ktor --description "Kill TOR Service"
     end
 end
 
-function !rtor --description "Restarts TOR Service"
+function !rtor
+    # description: Restarts TOR Service
     # category: TOR
     sudo systemctl restart tor
     echo "✔️ TOR Restarted!"
 end
 
-function !torstatus --description 'Show TOR status'
+function !torstatus
+    # description: Show TOR status
     # category: TOR
     systemctl status tor --no-pager -l
 end
 
-function !torcheck --description 'Check if TOR is connected'
+function !torcheck
+    # description: Check if TOR is connected
     # category: TOR
     curl -s --socks5 127.0.0.1:1337 https://check.torproject.org/api/ip
 end
 
-function !vesktor --description 'runs vesktop trough TOR'
+function !vesktor
+    # description: runs vesktop trough TOR
     # category: TOR
     torsocks vesktop &
 end
@@ -253,12 +242,14 @@ end
 # SYSTEM
 # ---------------------------------------------------------
 
-function !upd --description "Update Arch Linux and installed packages"
+function !upd
+    # description: Update Arch Linux and installed packages
     # category: SYS
     sudo pacman -Syu
 end
 
-function !clean --description "Clean up package cache and remove orphan packages"
+function !clean
+    # description: Clean up package cache and remove orphan packages
     # category: SYS
 
     echo "Removing orphan packages..."
@@ -275,7 +266,8 @@ function !clean --description "Clean up package cache and remove orphan packages
     sudo pacman -Sc
 end
 
-function !fs --description "Show failed systemd services (EW SYSTEMD!!!!!1111!!!11)"
+function !fs
+    # description: Show failed systemd services (EW SYSTEMD!!!!!1111!!!11)
     # category: SYS
     systemctl --failed
 end
@@ -284,32 +276,38 @@ end
 # NETWORK
 # ---------------------------------------------------------
 
-function !ports --description "Show listening network ports"
+function !ports
+    # description: Show listening network ports
     # category: NET
     ss -tulpn
 end
 
-function !ip --description "Show public IP address"
+function !ip
+    # description: Show public IP address
     # category: NET
     echo $info
 end
 
-function !net --description "Show network inferfaces"
+function !net
+    # description: Show network inferfaces
     # category: NET
     ip -br addr
 end
 
-function !route --description "Show network routing table"
+function !route
+    # description: Show network routing table
     # category: NET
     ip route
 end
 
-function !ping --description "Test internet connectivity"
+function !ping
+    # description: Test internet connectivity
     # category: NET
     ping -c 4 1.1.1.1
 end
 
-function !trace --description "Trace the route to a host"
+function !trace
+    # description: Trace the route to a host
     # category: NET
 
     if test (count $argv) -eq 0
@@ -324,17 +322,20 @@ end
 # GIT
 # ---------------------------------------------------------
 
-function !gs --description "Show Git repository status"
+function !gs
+    # description: Show Git repository status
     # category: GIT
     git status
 end
 
-function !gp --description "Push Git changes"
+function !gp
+    # description: Push Git changes
     # category: GIT
     git push
 end
 
-function !gcommit --description "Create a Git commit"
+function !gcommit
+    # description: Create a Git commit
     # category: GIT
     if test (count $argv) -eq 0
         echo "Usage: !gc <commit message>"
@@ -342,12 +343,14 @@ function !gcommit --description "Create a Git commit"
     end
 end
 
-function !gd --description "Show Git changes"
+function !gd
+    # description: Show Git changes
     # category: GIT
     git diff
 end
 
-function !gc --description "Clone a Git repository"
+function !gc
+    # description: Clone a Git repository
     # category: GIT
 
     if test (count $argv) -eq 0
@@ -362,17 +365,20 @@ end
 # FILES & DIRECTORIES
 # ---------------------------------------------------------
 
-function !up --description "Go up one dir"
+function !up
+    # description: Go up one dir
     # category: FILES
     cd ..
 end
 
-function !up2 --description "Go up two dirs"
+function !up2
+    # description: Go up two dirs
     # category: FILES
     cd ../..
 end
 
-function !mkcd --description "Create a directory and enter it"
+function !mkcd
+    # description: Create a directory and enter it
     # category: FILES
     if test (count $argv) -eq 0
         echo "Usage: !mkcd <directory>"
@@ -386,18 +392,21 @@ end
 # WEATHER
 # ---------------------------------------------------------
 
-function !cw --description "Weateher info, But clears your terminal beforehand. *For screenies*"
+function !cw
+    # description: Weateher info, But clears your terminal beforehand. *For screenies*
     # category: MISC
     clear
     !w
 end
 
-function !wlegacy --description "Weather info [LEGACY] / Provided by wttr.in"
+function !wlegacy
+    # description: Weather info [LEGACY] / Provided by wttr.in
     # category: MISC
     curl https://wttr.in
 end
 
-function !w --description "Weather info / Provided by wttr.in"
+function !w
+    # description: Weather info / Provided by wttr.in
     # category: MISC
 
     set -l theme ~/.config/omarchy/current/theme/colors.toml
@@ -587,7 +596,6 @@ function !w --description "Weather info / Provided by wttr.in"
     set_color $accent
     printf "│\n"
 
-    # Empty line
     set_color $accent
     printf "│"
 
@@ -618,7 +626,6 @@ function !w --description "Weather info / Provided by wttr.in"
         set -l content_length (string length -- $content)
         set -l padding (math $inner_width - $content_length - 1)
 
-        # ⛅ occupies one extra terminal column
         if string match -q "*⛅*" -- $content
             set padding (math $padding - 1)
         end
@@ -658,6 +665,25 @@ function !w --description "Weather info / Provided by wttr.in"
 end
 
 # ---------------------------------------------------------
+# ALIASES
+# ---------------------------------------------------------
+alias ff='fzf --preview "bat --style=numbers --color=always {}"'
+# description: FileFinder / Provided by OMARCHY
+# category: ALIASES
+
+alias !h='!help'
+# description: Shorter way to get here!
+# category: ALIASES
+
+alias !cmds='!help'
+# description: Alternative command alias to '!help'
+# category: ALIASES
+
+alias !wl="!wlegacy"
+# description: Shorter command for weather legacy!
+# category: ALIASES
+
+# ---------------------------------------------------------
 # PROMPT
 # ---------------------------------------------------------
 
@@ -676,7 +702,9 @@ end
 # HELP
 # ---------------------------------------------------------
 
-function !help --description "Show custom Fish commands and descriptions"
+function !help
+    # description: Show custom Fish commands and descriptions
+
     set -l config ~/.config/fish/config.fish
     set -l theme ~/.config/omarchy/current/theme/colors.toml
     set -l commands
@@ -694,27 +722,34 @@ function !help --description "Show custom Fish commands and descriptions"
 
     set -l current_name ""
     set -l current_description ""
-    set -l current_type ""
 
     while read -l line
 
-        # Function
-        set -l match (string match -r "^function (![^ ]+) --description ['\"](.*)['\"]\$" -- $line)
+        # Function name
+        set -l match (string match -r '^function[[:space:]]+(![^[:space:]]+)' -- $line)
 
-        if test (count $match) -eq 3
+        if test (count $match) -eq 2
             set current_name $match[2]
-            set current_description $match[3]
-            set current_type function
+            set current_description ""
             continue
         end
 
+        # Description
+        if test -n "$current_name"
+            set -l description_match (string match -r '^[[:space:]]*#[[:space:]]*description:[[:space:]]*(.+)$' -- $line)
+
+            if test (count $description_match) -eq 2
+                set current_description $description_match[2]
+                continue
+            end
+        end
+
         # Alias
-        set -l alias_match (string match -r "^[[:space:]]*alias[[:space:]]+(!?[^=[:space:]]+)=" -- $line)
+        set -l alias_match (string match -r '^[[:space:]]*alias[[:space:]]+(!?[^=[:space:]]+)=' -- $line)
 
         if test (count $alias_match) -eq 2
             set current_name $alias_match[2]
             set current_description alias
-            set current_type alias
             continue
         end
 
@@ -725,11 +760,12 @@ function !help --description "Show custom Fish commands and descriptions"
             if test (count $category_match) -eq 2
                 set -l category $category_match[2]
 
-                set -a commands "$category|$current_name|$current_description"
+                if test -n "$current_description"
+                    set -a commands "$category|$current_name|$current_description"
 
-                set current_name ""
-                set current_description ""
-                set current_type ""
+                    set current_name ""
+                    set current_description ""
+                end
             end
         end
     end <$config
@@ -829,7 +865,6 @@ function !help --description "Show custom Fish commands and descriptions"
 
     for row in $rows
 
-        # Blank row
         if test -z "$row"
             set_color $accent
             printf "│"
@@ -843,7 +878,6 @@ function !help --description "Show custom Fish commands and descriptions"
             continue
         end
 
-        # Category
         if string match -q "CATEGORY|*" -- $row
             set -l category (string replace "CATEGORY|" "" -- $row)
 
@@ -858,7 +892,6 @@ function !help --description "Show custom Fish commands and descriptions"
             set_color $accent
             printf "│"
 
-            set_color $accent
             printf " %s" "$header"
 
             if test $padding -gt 0
@@ -869,7 +902,6 @@ function !help --description "Show custom Fish commands and descriptions"
             set_color $accent
             printf "│\n"
 
-            # Command / alias
         else
             set -l row_length (string length -- $row)
             set -l padding (math $width - $row_length)
