@@ -1,3 +1,13 @@
+#----------------------------------------------------------
+# NOTE: This version is not meant to be used by you.
+# It's very possible that it's currently something i am 
+# working on, and using it may fuck up your config file as 
+# i actively change things in order to try to make the 
+# config better.
+# YOU HAVE BEEN WARNED!
+# TLDR; DEV BACKUPS
+#----------------------------------------------------------
+
 # ---------------------------------------------------------
 # FISH-GREETING
 # ---------------------------------------------------------
