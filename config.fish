@@ -117,7 +117,7 @@ function !wlegacy --description "Weather info [LEGACY] / Provided by wttr.in"
     curl https://wttr.in
 end
 
-function !w --description "Weather info / Provided by wttr.in / Redesigned interface"
+function !w --description "Weather info / Provided by wttr.in"
     # category: MISC
 
     set -l theme ~/.config/omarchy/current/theme/colors.toml
@@ -275,7 +275,7 @@ function !w --description "Weather info / Provided by wttr.in / Redesigned inter
         end
     end
 
-    set -l header "── WEATHER  $location"
+    set -l header "  ── WEATHER  $location "
     set -l header_length (string length -- $header)
 
     if test $header_length -gt $max_length
@@ -291,19 +291,15 @@ function !w --description "Weather info / Provided by wttr.in / Redesigned inter
     printf "╭%s╮\n" "$border"
 
     set_color $accent
-    printf "│"
-
-    printf "  "
-    printf "%s" "$header"
+    printf "│%s" "$header"
 
     set -l header_padding (math $inner_width - (string length -- $header) - 2)
 
-    if test $header_padding -lt 0
-        set header_padding 0
+    if test $header_padding -gt 0
+        printf "%s" (string repeat -n $header_padding "─")
     end
 
-    printf "%*s" $header_padding ""
-    printf "│\n"
+    printf "  │\n"
 
     set_color $accent
     printf "│"
@@ -372,7 +368,6 @@ function !w --description "Weather info / Provided by wttr.in / Redesigned inter
     set_color normal
     printf "\n"
 end
-
 
 # ---------------------------------------------------------
 # PROMPT
