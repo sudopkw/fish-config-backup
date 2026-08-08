@@ -1,3 +1,4 @@
+
 # ---------------------------------------------------------
 # FISH-GREETING
 # ---------------------------------------------------------
@@ -47,10 +48,12 @@ function fish_greeting
         "No way! Is that $USER??!!11!!11!!" \
         "Access Authorized, Welcome back, $USER!"
 
+    set -l quote ""$greetings[(random 1 (count $greetings))]
+
     set -l info_rows \
         "🗓  Date: $today" \
         "🌍 Currently in: $country, $city" \
-        "☁️  Weather: $weather"
+        "☁  Weather: $weather"
 
     if test "$vpn_status" = true
         set -a info_rows "👓 VPN: TRUE"
@@ -64,28 +67,71 @@ function fish_greeting
         set -a info_rows "💉 TOR: FALSE"
     end
 
-    set -l info_width 0
+    # Find widest visible content
+    set -l content_width 0
 
     for row in $info_rows
-        set -l length (string length --visible -- $row)
-        if string match -q "*☁️*" -- $row
-            set length (math $length - 1)
+        set -l length (string length --visible -- "$row")
+
+        if string match -q "*☁️*" -- "$row"
+            set length (math $length + 1)
         end
 
-        if test $length -gt $info_width
-            set info_width $length
+        if test $length -gt $content_width
+            set content_width $length
         end
     end
 
-    set -l info_border_width (math $info_width + 4)
-    set -l info_border (string repeat -n $info_border_width "─")
+    set -l quote_length (string length --visible -- "$quote")
+
+    if test $quote_length -gt $content_width
+        set content_width $quote_length
+    end
+
+    set -l info_category_length (string length --visible -- "── INFO")
+    set -l greeting_category_length (string length --visible -- "── GREETING")
+
+    if test $info_category_length -gt $content_width
+        set content_width $info_category_length
+    end
+
+    if test $greeting_category_length -gt $content_width
+        set content_width $greeting_category_length
+    end
+
+    # Four spaces total: two left + two right
+    set -l box_width (math $content_width + 4)
+    set -l border (string repeat -n $box_width "─")
+
+    printf "\n"
+
+    # Top border
+    set_color $accent
+    printf "╭%s╮\n" "$border"
+
+    # INFO category
+    set_color $accent
+    printf "│  ── INFO"
+
+    set -l category_padding (math $content_width - 7)
+
+    if test $category_padding -gt 0
+        set_color $foreground
+        printf "%*s" $category_padding ""
+    end
 
     set_color $accent
-    printf "╭%s╮\n" "$info_border"
+    printf "  │\n"
 
+    # Info rows
     for row in $info_rows
-        set -l length (string length --visible -- $row)
-        set -l padding (math $info_width - $length)
+        set -l length (string length --visible -- "$row")
+
+        if string match -q "*☁️*" -- "$row"
+            set length (math $length + 1)
+        end
+
+        set -l padding (math $content_width - $length)
 
         set_color $accent
         printf "│  "
@@ -101,24 +147,62 @@ function fish_greeting
         printf "  │\n"
     end
 
+    # Blank separator
     set_color $accent
-    printf "╰%s╯\n" "$info_border"
-
-    set -l quote " "$greetings[(random 1 (count $greetings))]
+    printf "│"
 
     set_color $foreground
-    printf "%s\n" "$quote"
+    printf "%*s" (math $box_width) ""
+
+    set_color $accent
+    printf "│\n"
+
+    # GREETING category
+    set_color $accent
+    printf "│  ── GREETING"
+
+    set -l category_padding (math $content_width - 11)
+
+    if test $category_padding -gt 0
+        set_color $foreground
+        printf "%*s" $category_padding ""
+    end
+
+    set_color $accent
+    printf "  │\n"
+
+    # Greeting
+    set -l quote_length (string length --visible -- "$quote")
+    set -l quote_padding (math $content_width - $quote_length)
+
+    set_color $accent
+    printf "│  "
+
+    set_color $foreground
+    printf "%s" "$quote"
+
+    if test $quote_padding -gt 0
+        printf "%*s" $quote_padding ""
+    end
+
+    set_color $accent
+    printf "  │\n"
+
+    # Bottom border
+    set_color $accent
+    printf "╰%s╯\n" "$border"
 
     set_color normal
     printf "\n"
-    echo " 🛈  For a list of commands, type !help"
+    echo " 🛈  For a list of commands, type '!help' or '!h'"
 end
 
 # ---------------------------------------------------------
 # ALIASES
 # ---------------------------------------------------------
-
 alias ff='fzf --preview "bat --style=numbers --color=always {}"'
+
+alias !h='!help'
 
 # ---------------------------------------------------------
 # TOR
@@ -471,7 +555,7 @@ function !w --description "Weather info / Provided by wttr.in"
         end
     end
 
-    set -l header "  ── WEATHER  $location "
+    set -l header "  ── WEATHER | $location "
     set -l header_length (string length -- $header)
 
     if test $header_length -gt $max_length
@@ -486,17 +570,22 @@ function !w --description "Weather info / Provided by wttr.in"
     set_color $accent
     printf "╭%s╮\n" "$border"
 
-    # Weather header with continuation line
+    # Weather header
     set_color $accent
-    printf "│%s" "$header"
+    printf "│"
 
-    set -l header_padding (math $inner_width - (string length -- $header) - 2)
+    set_color $accent
+    printf "%s" "$header"
+    set_color $foreground
+
+    set -l header_padding (math $inner_width - (string length -- $header))
 
     if test $header_padding -gt 0
-        printf "%s" (string repeat -n $header_padding "─")
+        printf "%*s" $header_padding ""
     end
 
-    printf "  │\n"
+    set_color $accent
+    printf "│\n"
 
     # Empty line
     set_color $accent
@@ -605,16 +694,31 @@ function !help --description "Show custom Fish commands and descriptions"
 
     set -l current_name ""
     set -l current_description ""
+    set -l current_type ""
 
     while read -l line
+
+        # Function
         set -l match (string match -r "^function (![^ ]+) --description ['\"](.*)['\"]\$" -- $line)
 
         if test (count $match) -eq 3
             set current_name $match[2]
             set current_description $match[3]
+            set current_type function
             continue
         end
 
+        # Alias
+        set -l alias_match (string match -r "^[[:space:]]*alias[[:space:]]+(!?[^=[:space:]]+)=" -- $line)
+
+        if test (count $alias_match) -eq 2
+            set current_name $alias_match[2]
+            set current_description alias
+            set current_type alias
+            continue
+        end
+
+        # Category
         if test -n "$current_name"
             set -l category_match (string match -r '^[[:space:]]*#[[:space:]]*category:[[:space:]]*(.+)$' -- $line)
 
@@ -625,6 +729,7 @@ function !help --description "Show custom Fish commands and descriptions"
 
                 set current_name ""
                 set current_description ""
+                set current_type ""
             end
         end
     end <$config
@@ -724,6 +829,7 @@ function !help --description "Show custom Fish commands and descriptions"
 
     for row in $rows
 
+        # Blank row
         if test -z "$row"
             set_color $accent
             printf "│"
@@ -737,6 +843,7 @@ function !help --description "Show custom Fish commands and descriptions"
             continue
         end
 
+        # Category
         if string match -q "CATEGORY|*" -- $row
             set -l category (string replace "CATEGORY|" "" -- $row)
 
@@ -762,6 +869,7 @@ function !help --description "Show custom Fish commands and descriptions"
             set_color $accent
             printf "│\n"
 
+            # Command / alias
         else
             set -l row_length (string length -- $row)
             set -l padding (math $width - $row_length)
