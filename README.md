@@ -38,11 +38,12 @@ end
 ```
 you may want to add a description and/or a category, How do we do this? Check it out below:
 ### Adding a description:
-```
+
 Make sure the description tag is right below the function, Else it may not work (Maybe it will, i haven't actually tested this)
+
 ```
 However, it's straightforward and all you need is a ' # description: <Description> ' tag.
-
+```
 - Here's an example of how it should look like inside of your configuration file:
 ```fish
 function !example
