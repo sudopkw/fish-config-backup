@@ -19,24 +19,6 @@ traceroute
 git
 ```
 
-# Screenies
-Screenshots of the configuration file
-## Info-Page
-The information page displays basic information you may want such as:
-Date
-Location (Not fully accurate)
-Current weather
-VPN & TOR check (Is it running?)
-<img width="417" height="271" alt="image" src="https://github.com/user-attachments/assets/a9041955-72fb-414b-b71c-4ed703d615e2" />
-## !help / !commands
-Displays a information box with every command in the config, along with it's description.
-Including any new commands and aliases you may add (Assuming that you follow the steps above and do it correctly)
-<img width="777" height="911" alt="image" src="https://github.com/user-attachments/assets/f5aefed3-2349-4236-9ac9-952d0661a35b" />
-## Weather
-A weather box/TUI (Not interactive) which pulls the weather for today, And the next 2 days using wttr.in!
-It's pretty simple, But hey it's probably faster than going to your browser and looking up your weather. (again, Probably, you may just have hands that move at the speed of light):w
-<img width="786" height="431" alt="image" src="https://github.com/user-attachments/assets/b9ca8076-3a4c-4cda-9969-381ee575f082" />
-
 # HOW 2 MY CUSTOM FUNCTIONZ!!!!!!!!!!!!
 step 1: make function
 How? read the damn fish wiki
@@ -89,6 +71,24 @@ You should then connect to tor.
 ## Assuming everything is done correctly, You are now successfully connected to TOR!
 
 ### NOTE: I would not recommend using this to connect to .onion sites, as simply using the TOR browser is safer. However, It's good enough as a system-wide VPN alternative (assuming i actually did it correctly lol)
+
+# Screenies
+Screenshots of the configuration file
+## Info-Page
+The information page displays basic information you may want such as:
+Date
+Location (Not fully accurate)
+Current weather
+VPN & TOR check (Is it running?)
+<img width="417" height="271" alt="image" src="https://github.com/user-attachments/assets/a9041955-72fb-414b-b71c-4ed703d615e2" />
+## !help / !commands
+Displays a information box with every command in the config, along with it's description.
+Including any new commands and aliases you may add (Assuming that you follow the steps above and do it correctly)
+<img width="777" height="911" alt="image" src="https://github.com/user-attachments/assets/f5aefed3-2349-4236-9ac9-952d0661a35b" />
+## Weather
+A weather box/TUI (Not interactive) which pulls the weather for today, And the next 2 days using wttr.in!
+It's pretty simple, But hey it's probably faster than going to your browser and looking up your weather. (again, Probably, you may just have hands that move at the speed of light):w
+<img width="786" height="431" alt="image" src="https://github.com/user-attachments/assets/b9ca8076-3a4c-4cda-9969-381ee575f082" />
 
 
 
