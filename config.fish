@@ -1,5 +1,8 @@
-function fish_greeting
+# ---------------------------------------------------------
+# FISH-GREETING
+# ---------------------------------------------------------
 
+function fish_greeting
     set -l info (curl -s ipinfo.io/json)
     set -l ip (echo $info | jq -r '.ip')
     set -l country (echo $info | jq -r '.country')
@@ -7,7 +10,6 @@ function fish_greeting
 
     set -l today (date "+%A, %B %d")
     set -l weather (curl -s 'wttr.in/?format=%C+%t' 2>/dev/null)
-
 
     set -l vpn_status (echo $info | jq -r '.privacy.vpn // "false"')
     set -l tor_status (curl -s --socks5 127.0.0.1:1337 https://check.torproject.org/api/ip 2>/dev/null | jq -r '.IsTor // "false"')
@@ -49,13 +51,23 @@ function fish_greeting
         echo "💉 TOR: FALSE"
     end
 
-
     echo $greetings[(random 1 (count $greetings))]
 end
 
+
+# ---------------------------------------------------------
+# ALIASES
+# ---------------------------------------------------------
+
 alias ff='fzf --preview "bat --style=numbers --color=always {}"'
 
+
+# ---------------------------------------------------------
+# TOR
+# ---------------------------------------------------------
+
 function !tor --description 'Start the TOR service'
+    # category: TOR
     sudo systemctl start tor
     if test $status -eq 0
         echo "✔️ TOR Started! [ SOCKSPort:1337 ]"
@@ -65,6 +77,7 @@ function !tor --description 'Start the TOR service'
 end
 
 function !ktor --description "Kill TOR Service"
+    # category: TOR
     sudo systemctl stop tor
     if test $status -eq 0
         echo "✔️ TOR Killed!"
@@ -74,21 +87,296 @@ function !ktor --description "Kill TOR Service"
 end
 
 function !rtor --description "Restarts TOR Service"
+    # category: TOR
     sudo systemctl restart tor
     echo "✔️ TOR Restarted!"
 end
 
 function !torstatus --description 'Show TOR status'
+    # category: TOR
     systemctl status tor --no-pager -l
 end
 
 function !torcheck --description 'Check if TOR is connected'
+    # category: TOR
     curl -s --socks5 127.0.0.1:1337 https://check.torproject.org/api/ip
 end
 
-function !w --description "Weather info / Provided by wttr.in"
+function vesktor --description 'runs vesktop trough TOR'
+    # category: TOR
+    torsocks vesktop &
+end
+
+
+# ---------------------------------------------------------
+# WEATHER
+# ---------------------------------------------------------
+
+function !wlegacy --description "Weather info [LEGACY] / Provided by wttr.in"
+    # category: MISC
     curl https://wttr.in
 end
+
+function !w --description "Weather info / Provided by wttr.in / Redesigned interface"
+    # category: MISC
+
+    set -l theme ~/.config/omarchy/current/theme/colors.toml
+
+    set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+    set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+
+    if test -z "$accent"
+        set accent normal
+    end
+
+    if test -z "$foreground"
+        set foreground normal
+    end
+
+    if not command -q curl
+        printf "curl is required.\n"
+        return 1
+    end
+
+    if not command -q jq
+        printf "jq is required: sudo pacman -S jq\n"
+        return 1
+    end
+
+    set -l json (curl -sS --fail --max-time 10 'https://wttr.in/?format=j1' 2>/dev/null)
+
+    if test $status -ne 0 -o -z "$json"
+        printf "\n"
+
+        set_color $accent
+        printf "╭───────────────────────────────────────────────╮\n"
+
+        set_color $foreground
+        printf "│ Unable to retrieve weather data.              "
+
+        set_color $accent
+        printf "│\n"
+        printf "╰───────────────────────────────────────────────╯\n"
+
+        set_color normal
+        printf "\n"
+        return 1
+    end
+
+    set -l location (printf '%s\n' $json | jq -r '.nearest_area[0].areaName[0].value // "Unknown"')
+
+    function __weather_icon --argument-names code
+        switch $code
+            case 113
+                echo "☀"
+            case 116
+                echo "⛅"
+            case 119 122
+                echo "☁"
+            case 143 248 260
+                echo "≋"
+            case 176 263 266 293 296 299 302 305 308 311 314 317 350 353 356 359
+                echo "☂"
+            case 179 182 185 281 284 320 323 326 329 332 335 338 362 365 368 371 374 377
+                echo "❄"
+            case 200 386 389 392 395
+                echo "⚡"
+            case '*'
+                echo "?"
+        end
+    end
+
+    function __weather_day --argument-names date_string
+        date -d "$date_string" '+%A' 2>/dev/null
+    end
+
+    set -l forecast (printf '%s\n' $json | jq -r '
+        .weather[0:3][] |
+        "DAY|\(.date)",
+        "Morning|09:00|\(.hourly[2].weatherCode)|\(.hourly[2].tempC)|\(.hourly[2].FeelsLikeC)|\(.hourly[2].weatherDesc[0].value)|\(.hourly[2].chanceofrain)|\(.hourly[2].humidity)|\(.hourly[2].windspeedKmph)|\(.hourly[2].winddir16Point)",
+        "Noon|12:00|\(.hourly[4].weatherCode)|\(.hourly[4].tempC)|\(.hourly[4].FeelsLikeC)|\(.hourly[4].weatherDesc[0].value)|\(.hourly[4].chanceofrain)|\(.hourly[4].humidity)|\(.hourly[4].windspeedKmph)|\(.hourly[4].winddir16Point)",
+        "Evening|18:00|\(.hourly[6].weatherCode)|\(.hourly[6].tempC)|\(.hourly[6].FeelsLikeC)|\(.hourly[6].weatherDesc[0].value)|\(.hourly[6].chanceofrain)|\(.hourly[6].humidity)|\(.hourly[6].windspeedKmph)|\(.hourly[6].winddir16Point)",
+        "Night|21:00|\(.hourly[7].weatherCode)|\(.hourly[7].tempC)|\(.hourly[7].FeelsLikeC)|\(.hourly[7].weatherDesc[0].value)|\(.hourly[7].chanceofrain)|\(.hourly[7].humidity)|\(.hourly[7].windspeedKmph)|\(.hourly[7].winddir16Point)"
+    ' 2>/dev/null)
+
+    if test $status -ne 0 -o (count $forecast) -eq 0
+        printf "\n"
+
+        set_color $accent
+        printf "╭───────────────────────────────────────────────╮\n"
+
+        set_color $foreground
+        printf "│ Failed to parse weather forecast.             "
+
+        set_color $accent
+        printf "│\n"
+        printf "╰───────────────────────────────────────────────╯\n"
+
+        set_color normal
+        printf "\n"
+        return 1
+    end
+
+    set -l rows
+
+    for entry in $forecast
+        set -l parts (string split "|" -- $entry)
+
+        if test "$parts[1]" = DAY
+            set -l day_name (__weather_day $parts[2])
+
+            if test -z "$day_name"
+                set day_name $parts[2]
+            end
+
+            set -a rows "DAY|  ── $day_name"
+            continue
+        end
+
+        set -l period $parts[1]
+        set -l code $parts[3]
+        set -l temp $parts[4]
+        set -l feels $parts[5]
+        set -l condition $parts[6]
+        set -l rain $parts[7]
+        set -l humidity $parts[8]
+        set -l wind $parts[9]
+        set -l direction $parts[10]
+
+        set -l icon (__weather_icon $code)
+
+        if test (string length -- $condition) -gt 18
+            set condition (string sub -l 18 -- $condition)
+        end
+
+        set -l line (printf "  %-9s %s  %3s°C  %-18s  Feels %3s°C  Rain %3s%%  Hum %3s%%  Wind %3s %s" \
+            "$period" \
+            "$icon" \
+            "$temp" \
+            "$condition" \
+            "$feels" \
+            "$rain" \
+            "$humidity" \
+            "$wind" \
+            "$direction")
+
+        set -a rows "ROW|$line"
+    end
+
+    set -l max_length 0
+
+    for entry in $rows
+        set -l parts (string split "|" -- $entry)
+        set -l content $parts[2]
+        set -l length (string length -- $content)
+
+        if test $length -gt $max_length
+            set max_length $length
+        end
+    end
+
+    set -l header "── WEATHER  $location"
+    set -l header_length (string length -- $header)
+
+    if test $header_length -gt $max_length
+        set max_length $header_length
+    end
+
+    set -l inner_width (math $max_length + 4)
+    set -l border (string repeat -n $inner_width "─")
+
+    printf "\n"
+
+    set_color $accent
+    printf "╭%s╮\n" "$border"
+
+    set_color $accent
+    printf "│"
+
+    printf "  "
+    printf "%s" "$header"
+
+    set -l header_padding (math $inner_width - (string length -- $header) - 2)
+
+    if test $header_padding -lt 0
+        set header_padding 0
+    end
+
+    printf "%*s" $header_padding ""
+    printf "│\n"
+
+    set_color $accent
+    printf "│"
+
+    set_color $foreground
+    printf "%*s" $inner_width ""
+
+    set_color $accent
+    printf "│\n"
+
+    set -l previous_type ""
+
+    for entry in $rows
+        set -l parts (string split "|" -- $entry)
+        set -l type $parts[1]
+        set -l content $parts[2]
+
+        if test "$type" = DAY -a "$previous_type" = ROW
+            set_color $accent
+            printf "│"
+
+            set_color $foreground
+            printf "%*s" $inner_width ""
+
+            set_color $accent
+            printf "│\n"
+        end
+
+        set -l content_length (string length -- $content)
+        set -l padding (math $inner_width - $content_length - 1)
+
+        if string match -q "*⛅*" -- $content
+            set padding (math $padding - 1)
+        end
+
+        if test $padding -lt 0
+            set padding 0
+        end
+
+        set_color $accent
+        printf "│"
+
+        set_color $foreground
+        printf " "
+
+        if test "$type" = DAY
+            set_color $accent
+        else
+            set_color $foreground
+        end
+
+        printf "%s" "$content"
+
+        set_color $foreground
+        printf "%*s" $padding ""
+
+        set_color $accent
+        printf "│\n"
+
+        set previous_type $type
+    end
+
+    set_color $accent
+    printf "╰%s╯\n" "$border"
+
+    set_color normal
+    printf "\n"
+end
+
+
+# ---------------------------------------------------------
+# PROMPT
+# ---------------------------------------------------------
 
 function fish_prompt
     if test $status -ne 0
@@ -101,6 +389,216 @@ function fish_prompt
     end
 end
 
-function vesktor --description 'runs vesktop trough TOR ( i have no clue if this even works -- torsocks package needed )'
-    torsocks vesktop &
+
+# ---------------------------------------------------------
+# TESTING
+# ---------------------------------------------------------
+
+function !example --description "This is an extremely long description that would previously break the box"
+    # category: TESTING
+    echo "I am an example!"
+end
+
+function !example2 --description "This is an even longer description to absolutely make sure the box will not break, as it is stronger than diamonds! Long live the Great German Reich! We shalll reclaim."
+    # category: TESTING
+    echo "I am an example!"
+end
+
+
+# ---------------------------------------------------------
+# HELP
+# ---------------------------------------------------------
+
+function !help --description "Show custom Fish commands and descriptions"
+    set -l config ~/.config/fish/config.fish
+    set -l theme ~/.config/omarchy/current/theme/colors.toml
+    set -l commands
+
+    set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+    set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+
+    if test -z "$accent"
+        set accent normal
+    end
+
+    if test -z "$foreground"
+        set foreground normal
+    end
+
+    set -l current_name ""
+    set -l current_description ""
+
+    while read -l line
+        set -l match (string match -r "^function (![^ ]+) --description ['\"](.*)['\"]\$" -- $line)
+
+        if test (count $match) -eq 3
+            set current_name $match[2]
+            set current_description $match[3]
+            continue
+        end
+
+        if test -n "$current_name"
+            set -l category_match (string match -r '^[[:space:]]*#[[:space:]]*category:[[:space:]]*(.+)$' -- $line)
+
+            if test (count $category_match) -eq 2
+                set -l category $category_match[2]
+                set -a commands "$category|$current_name|$current_description"
+
+                set current_name ""
+                set current_description ""
+            end
+        end
+    end < $config
+
+    if test (count $commands) -eq 0
+        printf "\n"
+
+        set_color $accent
+        printf "╭───────────────────────────────────────────────╮\n"
+        printf "│"
+
+        set_color $foreground
+        printf " No custom commands found.                     "
+
+        set_color $accent
+        printf "│\n"
+        printf "╰───────────────────────────────────────────────╯\n"
+
+        set_color normal
+        printf "\n"
+        return
+    end
+
+    set -l name_width 18
+    set -l desc_width 20
+
+    for command in $commands
+        set -l parts (string split "|" -- $command)
+        set -l name $parts[2]
+        set -l description $parts[3]
+
+        set -l name_len (string length -- $name)
+        set -l desc_len (string length -- $description)
+
+        if test $name_len -gt $name_width
+            set name_width $name_len
+        end
+
+        if test $desc_len -gt $desc_width
+            set desc_width $desc_len
+        end
+    end
+
+    set -l rows
+    set -l categories
+
+    for command in $commands
+        set -l parts (string split "|" -- $command)
+        set -l category $parts[1]
+        set -l name $parts[2]
+        set -l description $parts[3]
+
+        if not contains -- $category $categories
+            set -a categories $category
+
+            if test (count $categories) -gt 1
+                set -a rows ""
+            end
+
+            set -a rows "CATEGORY|$category"
+        end
+
+        set -l row (printf "  %-*s   %-*s " \
+            $name_width "$name" \
+            $desc_width "$description")
+
+        set -a rows "$row"
+    end
+
+    set -l width 0
+
+    for row in $rows
+        if string match -q "CATEGORY|*" -- $row
+            set -l category (string replace "CATEGORY|" "" -- $row)
+            set -l header_length (string length -- "  ── $category ─  ")
+
+            if test $header_length -gt $width
+                set width $header_length
+            end
+        else
+            set -l row_length (string length -- $row)
+
+            if test $row_length -gt $width
+                set width $row_length
+            end
+        end
+    end
+
+    set width (math $width + 2)
+    set -l border (string repeat -n $width "─")
+
+    printf "\n"
+
+    set_color $accent
+    printf "╭%s╮\n" $border
+
+    for row in $rows
+        if test -z "$row"
+            set_color $accent
+            printf "│"
+
+            set_color $foreground
+            printf "%*s" $width ""
+
+            set_color $accent
+            printf "│\n"
+
+            continue
+        end
+
+        if string match -q "CATEGORY|*" -- $row
+            set -l category (string replace "CATEGORY|" "" -- $row)
+
+            set -l header "  ── $category "
+            set -l header_length (string length -- $header)
+            set -l padding (math $width - $header_length - 2)
+
+            if test $padding -gt 0
+                set header "$header"(string repeat -n $padding "─")
+            end
+
+            set header "$header  "
+
+            set_color $accent
+            printf "│"
+
+            set_color $accent
+            printf "%s" "$header"
+
+            set_color $accent
+            printf "│\n"
+        else
+            set -l row_length (string length -- $row)
+            set -l padding (math $width - $row_length)
+
+            if test $padding -gt 0
+                set row "$row"(string repeat -n $padding " ")
+            end
+
+            set_color $accent
+            printf "│"
+
+            set_color $foreground
+            printf "%s" "$row"
+
+            set_color $accent
+            printf "│\n"
+        end
+    end
+
+    set_color $accent
+    printf "╰%s╯\n" $border
+
+    set_color normal
+    printf "\n"
 end
