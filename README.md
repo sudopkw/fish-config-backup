@@ -32,4 +32,20 @@ function !example --description "This is an example function in the readme."
   echo "Hello World!"
 end
 ```
+# HOW 2 USE TOR COMMAND 4 NEWBIES!!11!1!!!
+After installing tor, Run the !tor command.
+You should then connect to tor.
+(To Check, You can use the command !torcheck, No output = Not connected.)
+(Alternatively, you can use the command !torstat for additional information)
+## Install a proxy browser extension, I use FoxyProxy
+1. Create a new proxy and use these settings:
+ Hostname: 127.0.0.1 (local)
+ port: 1337
+ type: SOCKS5
+2. Turn the proxy on
+3. Visit a .onion site, and assuming you've done everything correctly
+## Assuming everything is done correctly, You are now successfully connected to TOR!
+
+### NOTE: I would not recommend using this to connect to .onion sites, as simply using the TOR browser is safer. However, It's good enough as a system-wide VPN alternative (assuming i actually did it correctly lol)
+
 
