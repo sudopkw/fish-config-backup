@@ -100,9 +100,142 @@ function !torcheck --description 'Check if TOR is connected'
     curl -s --socks5 127.0.0.1:1337 https://check.torproject.org/api/ip
 end
 
-function vesktor --description 'runs vesktop trough TOR'
+function !vesktor --description 'runs vesktop trough TOR'
     # category: TOR
     torsocks vesktop &
+end
+
+# ---------------------------------------------------------
+# SYSTEM
+# ---------------------------------------------------------
+
+function !upd --description "Update Arch Linux and installed packages"
+    # category: SYS
+    sudo pacman -Syu
+end
+
+function !clean --description "Clean up package cache and remove orphan packages"
+    # category: SYS
+
+    echo "Removing orphan packages..."
+
+    set -l orphans (pacman -Qtdq 2>/dev/null)
+
+    if test (count $orphans) -gt 0
+        sudo pacman -Rns $orphans
+    else
+        echo "No orphan packages found."
+    end
+
+    echo "Cleaning package cache..."
+    sudo pacman -Sc
+end
+
+function !fs --description "Show failed systemd services (EW SYSTEMD!!!!!1111!!!11)"
+    # category: SYS
+    systemctl --failed
+end
+
+# ---------------------------------------------------------
+# NETWORK
+# ---------------------------------------------------------
+
+function !ports --description "Show listening network ports"
+    # category: NET
+    ss -tulpn
+end
+
+function !ip --description "Show public IP address"
+    # category: NET
+    echo $info
+end
+
+function !net --description "Show network inferfaces"
+    # category: NET
+    ip -br addr
+end
+
+function !route --description "Show network routing table"
+    # category: NET
+    ip route
+end
+
+function !ping --description "Test internet connectivity"
+    # category: NET
+    ping -c 4 1.1.1.1
+end
+
+function !trace --description "Trace the route to a host"
+    # category: NET
+
+    if test (count $argv) -eq 0
+        echo "Usage: !trace <host>"
+        return 1
+    end
+
+    traceroute $argv[1]
+end
+
+# ---------------------------------------------------------
+# GIT
+# ---------------------------------------------------------
+
+function !gs --description "Show Git repository status"
+    # category: GIT
+    git status
+end
+
+function !gp --description "Push Git changes"
+    # category: GIT
+    git push
+end
+
+function !gcommit --description "Create a Git commit"
+    # category: GIT
+    if test (count $argv) -eq 0
+        echo "Usage: !gc <commit message>"
+        return 1
+    end
+end
+
+function !gd --description "Show Git changes"
+    # category: GIT
+    git diff
+end
+
+function !gc --description "Clone a Git repository"
+    # category: GIT
+
+    if test (count $argv) -eq 0
+        echo "Usage: !gclone <repository-url>"
+        return 1
+    end
+
+    git clone $argv[1]
+end
+
+# ---------------------------------------------------------
+# FILES & DIRECTORIES
+# ---------------------------------------------------------
+
+function !up --description "Go up one dir"
+    # category: FILES
+    cd ..
+end
+
+function !up2 --description "Go up two dirs"
+    # category: FILES
+    cd ../..
+end
+
+function !mkcd --description "Create a directory and enter it"
+    # category: FILES
+    if test (count $argv) -eq 0
+        echo "Usage: !mkcd <directory>"
+        return 1
+    end
+
+    mkdir -p -- $argv[1]; and cd -- $argv[1]
 end
 
 # ---------------------------------------------------------
@@ -382,20 +515,6 @@ function fish_prompt
         set_color normal
         echo -n "➜ "
     end
-end
-
-# ---------------------------------------------------------
-# TESTING
-# ---------------------------------------------------------
-
-function !example --description "This is an extremely long description that would previously break the box"
-    # category: TESTING
-    echo "I am an example!"
-end
-
-function !example2 --description "This is an even longer description to absolutely make sure the box will not break, as it is stronger than diamonds! Long live the Great German Reich! We shalll reclaim."
-    # category: TESTING
-    echo "I am an example!"
 end
 
 # ---------------------------------------------------------
