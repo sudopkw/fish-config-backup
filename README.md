@@ -26,7 +26,7 @@ make sure that your category tag is right below the function, Else it may not wo
 Categories are added in this format:
 `# category: <CategoryName>`
 Here is an example of how it should look like inside of your configuration file:
-```
+```fish
 function !example --description "This is an example function in the readme."
  # category: CategoryName
   echo "Hello World!"
