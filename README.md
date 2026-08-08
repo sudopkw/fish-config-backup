@@ -4,9 +4,9 @@ Just a back-up of my config for the fish shell
 I'm aware the configuration file is ugly, Don't judge me, Please
 
 ## packages you need:
-jq (For weather, You don't need this if you only plan to use !wlegacy (Legacy weather, Provided directly by curling wttr.in))
-tor (for tor command functionality) 
-torsocks (for running vesktop trough tor ( no clue if this works, lol ))
+### jq (For weather, You don't need this if you only plan to use !wlegacy (Legacy weather, Provided directly by curling wttr.in))
+### tor (for tor command functionality) 
+### torsocks (for running vesktop trough tor ( no clue if this works, lol ))
 
 # HOW 2 CATEGORIZE MY CUSTOM FUNCTIONZ!!!!!!!!!!!!
 step 1: make function
