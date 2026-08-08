@@ -8,30 +8,43 @@ I'm aware the configuration file is ugly, Don't judge me, Please
 ### tor (for tor command functionality) 
 ### torsocks (for running vesktop trough tor ( no clue if this works, lol ))
 
-# HOW 2 CATEGORIZE MY CUSTOM FUNCTIONZ!!!!!!!!!!!!
+# HOW 2 MY CUSTOM FUNCTIONZ!!!!!!!!!!!!
 step 1: make function
 How? read the damn fish wiki
 Jokes aside:
-## Make sure your function starts with ' ! ', it is the default prefix!
+## Make sure your custom function starts with ' ! ', it is the default prefix!
 if you wish to change it, You very much can! 
 if you decide to ignore this, Your own custom added functions will NOT show up in the !help TUI.
 ### After creating your desired function:
 ```fish
-function !example --description "This is an example function in the readme."
+function !example
   echo "Hello World!"
 end
 ```
-### Adding a category:
-make sure that your category tag is right below the function, Else it may not work (Maybe it will, i haven't actually tested this)
-Categories are added in this format:
-`# category: <CategoryName>`
-Here is an example of how it should look like inside of your configuration file:
+you may want to add a description and/or a category, How do we do this? Check it out below:
+### Adding a description:
+Make sure the description tag is right below the function, Else it may not work (Maybe it will, i haven't actually tested this)
+However, it's straightforward and all you need is a `# description: <Description>` tag.
+Here's an example of how it should look like inside of your configuration file:
 ```fish
-function !example --description "This is an example function in the readme."
- # category: CategoryName
+function !example
+ # description: This is a description!
   echo "Hello World!"
 end
 ```
+
+### Adding a category:
+Adding a category is just as easy as adding descriptions, Simply add a `# category: <CategoryName>` tag.
+Here is an example of how it should look like inside of your configuration file with both a description, and a category:
+```fish
+function !example
+ # description: This is a description!
+ # category: Test Category
+  echo "Hello World!"
+end
+```
+Yes, Spaces do indeed work in categories. I just personally wouldn't use them, but it's completely up to you what you do with your system.
+
 # HOW 2 USE TOR COMMAND 4 NEWBIES!!11!1!!!
 After installing tor, Run the !tor command.
 You should then connect to tor.
