@@ -3,6 +3,18 @@
 # ---------------------------------------------------------
 
 function fish_greeting
+    set -l theme ~/.config/omarchy/current/theme/colors.toml
+    set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+    set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+
+    if test -z "$accent"
+        set accent normal
+    end
+
+    if test -z "$foreground"
+        set foreground normal
+    end
+
     set -l info (curl -s ipinfo.io/json)
     set -l ip (echo $info | jq -r '.ip')
     set -l country (echo $info | jq -r '.country')
@@ -13,9 +25,10 @@ function fish_greeting
 
     set -l vpn_status (echo $info | jq -r '.privacy.vpn // "false"')
     set -l tor_status (curl -s --socks5 127.0.0.1:1337 https://check.torproject.org/api/ip 2>/dev/null | jq -r '.IsTor // "false"')
+
     set -l greetings \
         "HACK THE PLANET! $USER!" \
-        "$USER! $USER! you should totally write 'rm -rf ~/*' in your termianl or something!!11!!!!1" \
+        "$USER! $USER! you should totally write 'rm -rf ~/*' in your terminal or something!!11!!!!1" \
         "GIVE ME THAT DISTORTION! $USER!" \
         "Greetings, $USER!" \
         "Well well well, If it isn't $USER!" \
@@ -30,28 +43,75 @@ function fish_greeting
         "Welcome, $USER!" \
         "Hello again, $USER!" \
         "Logged in as: $USER" \
-        "1337 4 3\/3|2, $USER!" \
+        "1337 4 3/3|2, $USER!" \
         "No way! Is that $USER??!!11!!11!!" \
-        "Access Authorized, Welcome back, $USER!" \
-        "🌐 $ip <--- your ip, $USER. GET TROLLED BY YOUR OWN TERMINAL!!! :trollface:"
+        "Access Authorized, Welcome back, $USER!"
 
-    echo "🗓 Date: $today"
-    echo "🌍 Currently in: $country, $city"
-    echo "☁️  Weather: $weather"
+    set -l info_rows \
+        "🗓  Date: $today" \
+        "🌍 Currently in: $country, $city" \
+        "☁️  Weather: $weather"
 
     if test "$vpn_status" = true
-        echo "👓 VPN: TRUE"
+        set -a info_rows "👓 VPN: TRUE"
     else
-        echo "👁  VPN: FALSE"
+        set -a info_rows "👁  VPN: FALSE"
     end
 
     if test "$tor_status" = true
-        echo "🩸 TOR: TRUE"
+        set -a info_rows "🩸 TOR: TRUE"
     else
-        echo "💉 TOR: FALSE"
+        set -a info_rows "💉 TOR: FALSE"
     end
 
-    echo $greetings[(random 1 (count $greetings))]
+    set -l info_width 0
+
+    for row in $info_rows
+        set -l length (string length --visible -- $row)
+        if string match -q "*☁️*" -- $row
+            set length (math $length - 1)
+        end
+
+        if test $length -gt $info_width
+            set info_width $length
+        end
+    end
+
+    set -l info_border_width (math $info_width + 4)
+    set -l info_border (string repeat -n $info_border_width "─")
+
+    set_color $accent
+    printf "╭%s╮\n" "$info_border"
+
+    for row in $info_rows
+        set -l length (string length --visible -- $row)
+        set -l padding (math $info_width - $length)
+
+        set_color $accent
+        printf "│  "
+
+        set_color $foreground
+        printf "%s" "$row"
+
+        if test $padding -gt 0
+            printf "%*s" $padding ""
+        end
+
+        set_color $accent
+        printf "  │\n"
+    end
+
+    set_color $accent
+    printf "╰%s╯\n" "$info_border"
+
+    set -l quote " "$greetings[(random 1 (count $greetings))]
+
+    set_color $foreground
+    printf "%s\n" "$quote"
+
+    set_color normal
+    printf "\n"
+    echo " 🛈  For a list of commands, type !help"
 end
 
 # ---------------------------------------------------------
@@ -241,6 +301,12 @@ end
 # ---------------------------------------------------------
 # WEATHER
 # ---------------------------------------------------------
+
+function !cw --description "Weateher info, But clears your terminal beforehand. *For screenies*"
+    # category: MISC
+    clear
+    !w
+end
 
 function !wlegacy --description "Weather info [LEGACY] / Provided by wttr.in"
     # category: MISC
@@ -509,11 +575,11 @@ end
 function fish_prompt
     if test $status -ne 0
         set_color red
-        echo -n "✘ "
+        echo -n " ✘ "
         set_color normal
     else
         set_color normal
-        echo -n "➜ "
+        echo -n " ➜ "
     end
 end
 
