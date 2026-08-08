@@ -72,3 +72,10 @@ You should then connect to tor.
 ### NOTE: I would not recommend using this to connect to .onion sites, as simply using the TOR browser is safer. However, It's good enough as a system-wide VPN alternative (assuming i actually did it correctly lol)
 
 
+## Screenies: 
+<img width="417" height="271" alt="image" src="https://github.com/user-attachments/assets/a9041955-72fb-414b-b71c-4ed703d615e2" />
+<img width="777" height="911" alt="image" src="https://github.com/user-attachments/assets/f5aefed3-2349-4236-9ac9-952d0661a35b" />
+<img width="786" height="431" alt="image" src="https://github.com/user-attachments/assets/b9ca8076-3a4c-4cda-9969-381ee575f082" />
+
+
+
