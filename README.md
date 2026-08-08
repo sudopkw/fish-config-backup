@@ -20,12 +20,14 @@ git
 ```
 
 # HOW 2 MY CUSTOM FUNCTIONZ!!!!!!!!!!!!
+```
 step 1: make function
 How? read the damn fish wiki
 Jokes aside:
 ## Make sure your custom function starts with ' ! ', it is the default prefix!
 if you wish to change it, You very much can! 
 if you decide to ignore this, Your own custom added functions will NOT show up in the !help TUI.
+```
 ### After creating your desired function:
 ```fish
 function !example
@@ -34,9 +36,11 @@ end
 ```
 you may want to add a description and/or a category, How do we do this? Check it out below:
 ### Adding a description:
+```
 Make sure the description tag is right below the function, Else it may not work (Maybe it will, i haven't actually tested this)
-However, it's straightforward and all you need is a `# description: <Description>` tag.
+However, it's straightforward and all you need is a ' # description: <Description> ' tag.
 Here's an example of how it should look like inside of your configuration file:
+```
 ```fish
 function !example
  # description: This is a description!
