@@ -54,13 +54,11 @@ function fish_greeting
     echo $greetings[(random 1 (count $greetings))]
 end
 
-
 # ---------------------------------------------------------
 # ALIASES
 # ---------------------------------------------------------
 
 alias ff='fzf --preview "bat --style=numbers --color=always {}"'
-
 
 # ---------------------------------------------------------
 # TOR
@@ -106,7 +104,6 @@ function vesktor --description 'runs vesktop trough TOR'
     # category: TOR
     torsocks vesktop &
 end
-
 
 # ---------------------------------------------------------
 # WEATHER
@@ -290,6 +287,7 @@ function !w --description "Weather info / Provided by wttr.in"
     set_color $accent
     printf "╭%s╮\n" "$border"
 
+    # Weather header with continuation line
     set_color $accent
     printf "│%s" "$header"
 
@@ -301,6 +299,7 @@ function !w --description "Weather info / Provided by wttr.in"
 
     printf "  │\n"
 
+    # Empty line
     set_color $accent
     printf "│"
 
@@ -331,6 +330,7 @@ function !w --description "Weather info / Provided by wttr.in"
         set -l content_length (string length -- $content)
         set -l padding (math $inner_width - $content_length - 1)
 
+        # ⛅ occupies one extra terminal column
         if string match -q "*⛅*" -- $content
             set padding (math $padding - 1)
         end
@@ -384,7 +384,6 @@ function fish_prompt
     end
 end
 
-
 # ---------------------------------------------------------
 # TESTING
 # ---------------------------------------------------------
@@ -398,7 +397,6 @@ function !example2 --description "This is an even longer description to absolute
     # category: TESTING
     echo "I am an example!"
 end
-
 
 # ---------------------------------------------------------
 # HELP
@@ -437,13 +435,14 @@ function !help --description "Show custom Fish commands and descriptions"
 
             if test (count $category_match) -eq 2
                 set -l category $category_match[2]
+
                 set -a commands "$category|$current_name|$current_description"
 
                 set current_name ""
                 set current_description ""
             end
         end
-    end < $config
+    end <$config
 
     if test (count $commands) -eq 0
         printf "\n"
@@ -515,7 +514,7 @@ function !help --description "Show custom Fish commands and descriptions"
     for row in $rows
         if string match -q "CATEGORY|*" -- $row
             set -l category (string replace "CATEGORY|" "" -- $row)
-            set -l header_length (string length -- "  ── $category ─  ")
+            set -l header_length (string length -- "  ── $category")
 
             if test $header_length -gt $width
                 set width $header_length
@@ -530,14 +529,16 @@ function !help --description "Show custom Fish commands and descriptions"
     end
 
     set width (math $width + 2)
+
     set -l border (string repeat -n $width "─")
 
     printf "\n"
 
     set_color $accent
-    printf "╭%s╮\n" $border
+    printf "╭%s╮\n" "$border"
 
     for row in $rows
+
         if test -z "$row"
             set_color $accent
             printf "│"
@@ -554,24 +555,28 @@ function !help --description "Show custom Fish commands and descriptions"
         if string match -q "CATEGORY|*" -- $row
             set -l category (string replace "CATEGORY|" "" -- $row)
 
-            set -l header "  ── $category "
+            set -l header "  ── $category"
             set -l header_length (string length -- $header)
-            set -l padding (math $width - $header_length - 2)
+            set -l padding (math $width - $header_length - 1)
 
-            if test $padding -gt 0
-                set header "$header"(string repeat -n $padding "─")
+            if test $padding -lt 0
+                set padding 0
             end
-
-            set header "$header  "
 
             set_color $accent
             printf "│"
 
             set_color $accent
-            printf "%s" "$header"
+            printf " %s" "$header"
+
+            if test $padding -gt 0
+                set_color $foreground
+                printf "%*s" $padding ""
+            end
 
             set_color $accent
             printf "│\n"
+
         else
             set -l row_length (string length -- $row)
             set -l padding (math $width - $row_length)
@@ -592,7 +597,7 @@ function !help --description "Show custom Fish commands and descriptions"
     end
 
     set_color $accent
-    printf "╰%s╯\n" $border
+    printf "╰%s╯\n" "$border"
 
     set_color normal
     printf "\n"
