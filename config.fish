@@ -100,8 +100,6 @@ function fish_greeting
     set -l box_width (math $content_width + 4)
     set -l border (string repeat -n $box_width "─")
 
-    printf "\n"
-
     set_color $accent
     printf "╭%s╮\n" "$border"
 
