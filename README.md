@@ -19,7 +19,7 @@ git
 ```
 
 ## Installation guide:
-```shell
+```fish
 curl -fsSL https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/config.fish \
   -o ~/.config/fish/config.fish
 ```
