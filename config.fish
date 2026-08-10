@@ -434,7 +434,7 @@ function !log
         return 1
     end
 
-    set -l max_width 96
+    set -l max_width 97
     set -l wrapped_logs
 
     
