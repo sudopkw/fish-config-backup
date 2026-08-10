@@ -18,6 +18,12 @@ traceroute
 git
 ```
 
+## Installation guide:
+```bash
+curl -fsSL https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/config.fish \
+  -o ~/.config/fish/config.fish
+```
+
 # HOW 2 MY CUSTOM FUNCTIONZ!!!!!!!!!!!!
 ```
 step 1: make function
