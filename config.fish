@@ -434,21 +434,26 @@ function !log
         return 1
     end
 
-    set -l max_width 97
+    set -l max_width 95
     set -l wrapped_logs
 
-    
     for line in $logs
+        set -l first_line 1
+
         while test (string length -- "$line") -gt $max_width
             set -l chunk (string sub -s 1 -l $max_width -- "$line")
             set wrapped_logs $wrapped_logs "$chunk"
             set line (string sub -s (math $max_width + 1) -- "$line")
+            set first_line 0
         end
 
-        set wrapped_logs $wrapped_logs "$line"
+        if test $first_line -eq 0
+            set wrapped_logs $wrapped_logs " $line"
+        else
+            set wrapped_logs $wrapped_logs "$line"
+        end
     end
 
-    
     set -l content_width 6
 
     for line in $wrapped_logs
@@ -459,17 +464,14 @@ function !log
         end
     end
 
-    
     set -l box_width (math $content_width + 4)
     set -l border (string repeat -n $box_width "─")
 
     printf "\n"
 
-  
     set_color $accent
     printf "╭%s╮\n" "$border"
 
-    
     printf "│  "
     set_color $accent
     printf "── LOG"
@@ -484,7 +486,6 @@ function !log
     set_color $accent
     printf "  │\n"
 
-    
     for line in $wrapped_logs
         set -l length (string length -- "$line")
         set -l padding (math $content_width - $length)
@@ -503,7 +504,6 @@ function !log
         printf "  │\n"
     end
 
-    
     set_color $accent
     printf "╰%s╯\n" "$border"
 
