@@ -270,6 +270,12 @@ function !fs
     systemctl --failed
 end
 
+function !ucfg
+    # description: Updates the config to the latest version!
+    # category: SYS
+    curl -fsSL https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/config.fish \
+        -o ~/.config/fish/config.fish
+end
 # ---------------------------------------------------------
 # NETWORK
 # ---------------------------------------------------------
@@ -675,7 +681,9 @@ end
 # ALIASES
 # ---------------------------------------------------------
 alias ff='fzf --preview "bat --style=numbers --color=always {}"'
-# description: FileFinder / Provided by OMARCHY
+
+alias !ff='fzf --preview "bat --style=numbers --color=always {}"'
+# description: FileFinder / Provided by OMARCHY / NOTE; just "ff" works as-well
 # category: ALIASES
 
 alias !h='!help'
@@ -693,6 +701,19 @@ alias !wl="!wlegacy"
 alias !vi="!vencord"
 # description: Shortcut for the '!vencord' command
 # category: ALIASES
+
+function yay
+    # description: Turns the '--noconfirm' argument into a much simpler '-y'
+    set args $argv
+
+    for i in (seq (count $args))
+        if test "$args[$i]" = -y
+            set args[$i] --noconfirm
+        end
+    end
+
+    command yay $args
+end
 
 # ---------------------------------------------------------
 # PROMPT
