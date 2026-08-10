@@ -16,7 +16,7 @@ function fish_greeting
     end
 
     set -l cache_dir ~/.cache/pkw
-    set -l cache_age 600
+    set -l cache_age 1800
 
     mkdir -p $cache_dir
 
@@ -91,8 +91,6 @@ function fish_greeting
 
         if test $status -eq 0; and test -n "$tor_status"
             printf "%s" "$tor_status" >$tor_cache
-        else if test -f $tor_cache
-            set tor_status (cat $tor_cache)
         else
             set tor_status false
         end
@@ -356,6 +354,13 @@ function !cfgsource
     # description: Opens the config source code
     # category: SYS
     xdg-open "https://github.com/sudopkw/fish-config-backup"
+end
+
+function !cc
+    # description: Clears cache
+    # category: SYS
+    rm -rf ~/.cache/pkw
+    echo "Cache cleared."
 end
 # ---------------------------------------------------------
 # NETWORK
