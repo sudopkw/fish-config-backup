@@ -1,4 +1,4 @@
-── 10th of August 2026
+  ── 10th of August 2026
 + Added Change log!
 You can now use '-y' at the end of a install/delete command in order to automatically agree to the Y/N prompt.
 Use example: yay -S packagename -y | yay -Rns packagename -y
