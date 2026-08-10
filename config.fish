@@ -230,10 +230,10 @@ function !torcheck
     curl -s --socks5 127.0.0.1:1337 https://check.torproject.org/api/ip
 end
 
-function !vesktor
-    # description: runs vesktop trough TOR
+function !ventor
+    # description: runs vencord trough TOR
     # category: TOR
-    torsocks vesktop &
+    torsocks discord &
 end
 
 # ---------------------------------------------------------
@@ -384,6 +384,15 @@ function !mkcd
     end
 
     mkdir -p -- $argv[1]; and cd -- $argv[1]
+end
+
+# ---------------------------------------------------------
+# MISC
+# ---------------------------------------------------------
+function !vencord
+    # description: Vencord installer! NOTE: DISCORD NEEDS TO BE INSTALLED VIA FLATHUB!
+    # category: MISC
+    sh -c "$(curl -sS https://vencord.dev/install.sh)"
 end
 
 # ---------------------------------------------------------
@@ -679,6 +688,10 @@ alias !cmds='!help'
 
 alias !wl="!wlegacy"
 # description: Shorter command for weather legacy!
+# category: ALIASES
+
+alias !vi="!vencord"
+# description: Shortcut for the '!vencord' command
 # category: ALIASES
 
 # ---------------------------------------------------------
