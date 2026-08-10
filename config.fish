@@ -276,6 +276,12 @@ function !ucfg
     curl -fsSL https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/config.fish \
         -o ~/.config/fish/config.fish
 end
+
+function !cfgsource
+    # description: Opens the config source code
+    # category: SYS
+    xdg-open "https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/update.log"
+end
 # ---------------------------------------------------------
 # NETWORK
 # ---------------------------------------------------------
@@ -401,6 +407,110 @@ function !vencord
     sh -c "$(curl -sS https://vencord.dev/install.sh)"
 end
 
+#----------------------------------------------------------
+# LOG
+#----------------------------------------------------------
+
+function !log
+    # description: Show the remote update log
+    # category: MISC
+
+    set -l theme ~/.config/omarchy/current/theme/colors.toml
+    set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+    set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+
+    set -l log_url "https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/update.log?$(date +%s)"
+    set -l logs (curl -fsSL --max-time 5 "$log_url" 2>/dev/null)
+
+    if test $status -ne 0 -o (count $logs) -eq 0
+        set_color $accent
+        printf "╭──────────────────────────────────────╮\n"
+        set_color $foreground
+        printf "│  ── LOG                              │\n"
+        printf "│  Unable to retrieve update log.      │\n"
+        set_color $accent
+        printf "╰──────────────────────────────────────╯\n"
+        set_color normal
+        return 1
+    end
+
+    set -l max_width 96
+    set -l wrapped_logs
+
+    # Wrap long lines
+    for line in $logs
+        while test (string length -- "$line") -gt $max_width
+            set -l chunk (string sub -s 1 -l $max_width -- "$line")
+            set wrapped_logs $wrapped_logs "$chunk"
+            set line (string sub -s (math $max_width + 1) -- "$line")
+        end
+
+        set wrapped_logs $wrapped_logs "$line"
+    end
+
+    # Find longest line
+    set -l content_width 6
+
+    for line in $wrapped_logs
+        set -l length (string length -- "$line")
+
+        if test $length -gt $content_width
+            set content_width $length
+        end
+    end
+
+    # Box dimensions
+    set -l box_width (math $content_width + 4)
+    set -l border (string repeat -n $box_width "─")
+
+    printf "\n"
+
+    # Top border
+    set_color $accent
+    printf "╭%s╮\n" "$border"
+
+    # Header
+    printf "│  "
+    set_color $accent
+    printf "── LOG"
+
+    set -l header_padding (math $content_width - 6)
+
+    if test $header_padding -gt 0
+        set_color $foreground
+        printf "%*s" $header_padding ""
+    end
+
+    set_color $accent
+    printf "  │\n"
+
+    # Log entries
+    for line in $wrapped_logs
+        set -l length (string length -- "$line")
+        set -l padding (math $content_width - $length)
+
+        set_color $accent
+        printf "│  "
+
+        set_color $foreground
+        printf "%s" "$line"
+
+        if test $padding -gt 0
+            printf "%*s" $padding ""
+        end
+
+        set_color $accent
+        printf "  │\n"
+    end
+
+    # Bottom border
+    set_color $accent
+    printf "╰%s╯\n" "$border"
+
+    set_color normal
+    printf "\n"
+end
+
 # ---------------------------------------------------------
 # WEATHER
 # ---------------------------------------------------------
@@ -410,12 +520,6 @@ function !cw
     # category: MISC
     clear
     !w
-end
-
-function !wlegacy
-    # description: Weather info [LEGACY] / Provided by wttr.in
-    # category: MISC
-    curl https://wttr.in
 end
 
 function !w
@@ -694,12 +798,16 @@ alias !cmds='!help'
 # description: Alternative command alias to '!help'
 # category: ALIASES
 
-alias !wl="!wlegacy"
-# description: Shorter command for weather legacy!
+alias !l='!log'
+# description: Shortcut for accessing the logs
 # category: ALIASES
 
 alias !vi="!vencord"
 # description: Shortcut for the '!vencord' command
+# category: ALIASES
+
+alias !cfgs="!cfgsource"
+# description: Shortcut for the '!cfgsource' command
 # category: ALIASES
 
 function yay
@@ -757,7 +865,6 @@ function !help
 
     while read -l line
 
-        # Function name
         set -l match (string match -r '^function[[:space:]]+(![^[:space:]]+)' -- $line)
 
         if test (count $match) -eq 2
@@ -766,7 +873,6 @@ function !help
             continue
         end
 
-        # Description
         if test -n "$current_name"
             set -l description_match (string match -r '^[[:space:]]*#[[:space:]]*description:[[:space:]]*(.+)$' -- $line)
 
@@ -776,7 +882,6 @@ function !help
             end
         end
 
-        # Alias
         set -l alias_match (string match -r '^[[:space:]]*alias[[:space:]]+(!?[^=[:space:]]+)=' -- $line)
 
         if test (count $alias_match) -eq 2
@@ -785,7 +890,6 @@ function !help
             continue
         end
 
-        # Category
         if test -n "$current_name"
             set -l category_match (string match -r '^[[:space:]]*#[[:space:]]*category:[[:space:]]*(.+)$' -- $line)
 
