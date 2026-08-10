@@ -1,5 +1,6 @@
-This is a test log
-This is line 2.
-This is line 3.
-This is a very very very long update log that will absolutely abolish the box if it is not made correctly!!!! I guess it is time to test the dynamic boxes to their full extent, Huh?
-This is line 4.
+── 10th of August 2026
++ Added Change log!
+You can now use '-y' at the end of a install/delete command in order to automatically agree to the Y/N prompt.
+Use example: yay -S packagename -y | yay -Rns packagename -y
++ Added !cfgsource along with it's !cfgs alias!
+- Removed '!wlegacy'
