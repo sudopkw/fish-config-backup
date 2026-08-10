@@ -12,7 +12,6 @@ curl
 jq
 tor
 torsocks
-vesktop
 fzf
 bat
 traceroute
