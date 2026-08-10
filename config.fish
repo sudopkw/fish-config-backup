@@ -280,7 +280,7 @@ end
 function !cfgsource
     # description: Opens the config source code
     # category: SYS
-    xdg-open "https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/update.log"
+    xdg-open "https://github.com/sudopkw/fish-config-backup"
 end
 # ---------------------------------------------------------
 # NETWORK
@@ -437,7 +437,7 @@ function !log
     set -l max_width 96
     set -l wrapped_logs
 
-    # Wrap long lines
+    
     for line in $logs
         while test (string length -- "$line") -gt $max_width
             set -l chunk (string sub -s 1 -l $max_width -- "$line")
@@ -448,7 +448,7 @@ function !log
         set wrapped_logs $wrapped_logs "$line"
     end
 
-    # Find longest line
+    
     set -l content_width 6
 
     for line in $wrapped_logs
@@ -459,17 +459,17 @@ function !log
         end
     end
 
-    # Box dimensions
+    
     set -l box_width (math $content_width + 4)
     set -l border (string repeat -n $box_width "─")
 
     printf "\n"
 
-    # Top border
+  
     set_color $accent
     printf "╭%s╮\n" "$border"
 
-    # Header
+    
     printf "│  "
     set_color $accent
     printf "── LOG"
@@ -484,7 +484,7 @@ function !log
     set_color $accent
     printf "  │\n"
 
-    # Log entries
+    
     for line in $wrapped_logs
         set -l length (string length -- "$line")
         set -l padding (math $content_width - $length)
@@ -503,7 +503,7 @@ function !log
         printf "  │\n"
     end
 
-    # Bottom border
+    
     set_color $accent
     printf "╰%s╯\n" "$border"
 
