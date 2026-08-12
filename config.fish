@@ -139,6 +139,7 @@ function fish_greeting
         "Logged in as: $USER" \
         "1337 4 3/3|2, $USER!" \
         "No way! Is that $USER??!!11!!11!!" \
+        "Remember to update your config, $USER!" \
         "Access Authorized, Welcome back, $USER?"
 
     set -l quote ""$greetings[(random 1 (count $greetings))]
