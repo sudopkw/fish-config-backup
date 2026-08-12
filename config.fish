@@ -96,6 +96,30 @@ function fish_greeting
         end
     end
 
+    set -l cache_times
+
+    for cache_file in $info_cache $weather_cache $tor_cache
+        if test -f $cache_file
+            set -a cache_times (stat -c %Y $cache_file)
+        end
+    end
+
+    set -l cached_text "Cached: 0m ago"
+
+    if test (count $cache_times) -gt 0
+        set -l oldest_cache $cache_times[1]
+
+        for cache_time in $cache_times
+            if test $cache_time -lt $oldest_cache
+                set oldest_cache $cache_time
+            end
+        end
+
+        set -l elapsed (math (date +%s) - $oldest_cache)
+        set -l cached_minutes (math "floor($elapsed / 60)")
+        set cached_text "Cached: "$cached_minutes"m ago"
+    end
+
     set -l greetings \
         "HACK THE PLANET! $USER!" \
         "$USER! $USER! you should totally write 'rm -rf ~/*' in your terminal or something!!11!!!!1" \
@@ -135,6 +159,8 @@ function fish_greeting
     else
         set -a info_rows "💉 TOR: FALSE"
     end
+
+    set -a info_rows "⏰ $cached_text"
 
     set -l content_width 0
 
