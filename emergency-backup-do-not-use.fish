@@ -26,16 +26,110 @@ function fish_greeting
         set foreground normal
     end
 
-    set -l info (curl -s ipinfo.io/json)
+    set -l cache_dir ~/.cache/pkw
+    set -l cache_age 1800
+
+    mkdir -p $cache_dir
+
+    set -l info_cache $cache_dir/ipinfo
+    set -l info
+
+    if test -f $info_cache
+        set -l cache_time (stat -c %Y $info_cache)
+        set -l current_time (date +%s)
+
+        if test (math $current_time - $cache_time) -lt $cache_age
+            set info (cat $info_cache)
+        end
+    end
+
+    if test -z "$info"
+        set info (curl -s --max-time 2 ipinfo.io/json)
+
+        if test $status -eq 0; and test -n "$info"
+            printf "%s" "$info" >$info_cache
+        else if test -f $info_cache
+            set info (cat $info_cache)
+        end
+    end
+
     set -l ip (echo $info | jq -r '.ip')
     set -l country (echo $info | jq -r '.country')
     set -l city (echo $info | jq -r '.city')
 
     set -l today (date "+%A, %B %d")
-    set -l weather (curl -s 'wttr.in/?format=%C+%t' 2>/dev/null)
+
+    set -l weather_cache $cache_dir/weather
+    set -l weather
+
+    if test -f $weather_cache
+        set -l cache_time (stat -c %Y $weather_cache)
+        set -l current_time (date +%s)
+
+        if test (math $current_time - $cache_time) -lt $cache_age
+            set weather (cat $weather_cache)
+        end
+    end
+
+    if test -z "$weather"
+        set weather (curl -s --max-time 2 'wttr.in/?format=%C+%t' 2>/dev/null)
+
+        if test $status -eq 0; and test -n "$weather"
+            printf "%s" "$weather" >$weather_cache
+        else if test -f $weather_cache
+            set weather (cat $weather_cache)
+        else
+            set weather Unavailable
+        end
+    end
 
     set -l vpn_status (echo $info | jq -r '.privacy.vpn // "false"')
-    set -l tor_status (curl -s --socks5 127.0.0.1:1337 https://check.torproject.org/api/ip 2>/dev/null | jq -r '.IsTor // "false"')
+
+    set -l tor_cache $cache_dir/tor
+    set -l tor_status
+
+    if test -f $tor_cache
+        set -l cache_time (stat -c %Y $tor_cache)
+        set -l current_time (date +%s)
+
+        if test (math $current_time - $cache_time) -lt $cache_age
+            set tor_status (cat $tor_cache)
+        end
+    end
+
+    if test -z "$tor_status"
+        set tor_status (curl -s --max-time 2 --socks5 127.0.0.1:1337 https://check.torproject.org/api/ip 2>/dev/null | jq -r '.IsTor // "false"')
+
+        if test $status -eq 0; and test -n "$tor_status"
+            printf "%s" "$tor_status" >$tor_cache
+        else
+            set tor_status false
+        end
+    end
+
+    set -l cache_times
+
+    for cache_file in $info_cache $weather_cache $tor_cache
+        if test -f $cache_file
+            set -a cache_times (stat -c %Y $cache_file)
+        end
+    end
+
+    set -l cached_text "Cached: 0m ago"
+
+    if test (count $cache_times) -gt 0
+        set -l oldest_cache $cache_times[1]
+
+        for cache_time in $cache_times
+            if test $cache_time -lt $oldest_cache
+                set oldest_cache $cache_time
+            end
+        end
+
+        set -l elapsed (math (date +%s) - $oldest_cache)
+        set -l cached_minutes (math "floor($elapsed / 60)")
+        set cached_text "Cached: "$cached_minutes"m ago"
+    end
 
     set -l greetings \
         "HACK THE PLANET! $USER!" \
@@ -56,7 +150,8 @@ function fish_greeting
         "Logged in as: $USER" \
         "1337 4 3/3|2, $USER!" \
         "No way! Is that $USER??!!11!!11!!" \
-        "Access Authorized, Welcome back, $USER!"
+        "Remember to update your config, $USER!" \
+        "Access Authorized! Welcome back, $USER."
 
     set -l quote ""$greetings[(random 1 (count $greetings))]
 
@@ -76,6 +171,8 @@ function fish_greeting
     else
         set -a info_rows "💉 TOR: FALSE"
     end
+
+    set -a info_rows "⏰ $cached_text"
 
     set -l content_width 0
 
@@ -116,8 +213,9 @@ function fish_greeting
     set_color $accent
     printf "╭%s╮\n" "$border"
 
+    printf "│  "
     set_color $accent
-    printf "│  ── INFO"
+    printf "── INFO"
 
     set -l category_padding (math $content_width - 7)
 
@@ -243,10 +341,10 @@ function !torcheck
     curl -s --socks5 127.0.0.1:1337 https://check.torproject.org/api/ip
 end
 
-function !vesktor
-    # description: runs vesktop trough TOR
+function !ventor
+    # description: runs vencord trough TOR
     # category: TOR
-    torsocks vesktop &
+    torsocks discord &
 end
 
 # ---------------------------------------------------------
@@ -283,6 +381,25 @@ function !fs
     systemctl --failed
 end
 
+function !ucfg
+    # description: Updates the config to the latest version!
+    # category: SYS
+    curl -fsSL https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/config.fish \
+        -o ~/.config/fish/config.fish
+end
+
+function !cfgsource
+    # description: Opens the config source code
+    # category: SYS
+    xdg-open "https://github.com/sudopkw/fish-config-backup"
+end
+
+function !cc
+    # description: Clears cache
+    # category: SYS
+    rm -rf ~/.cache/pkw
+    echo "Cache cleared."
+end
 # ---------------------------------------------------------
 # NETWORK
 # ---------------------------------------------------------
@@ -296,7 +413,7 @@ end
 function !ip
     # description: Show public IP address
     # category: NET
-    echo $info
+    curl -s https://api.ipify.org
 end
 
 function !net
@@ -317,17 +434,6 @@ function !ping
     ping -c 4 1.1.1.1
 end
 
-function !trace
-    # description: Trace the route to a host
-    # category: NET
-
-    if test (count $argv) -eq 0
-        echo "Usage: !trace <host>"
-        return 1
-    end
-
-    traceroute $argv[1]
-end
 
 # ---------------------------------------------------------
 # GIT
@@ -400,6 +506,119 @@ function !mkcd
 end
 
 # ---------------------------------------------------------
+# MISC
+# ---------------------------------------------------------
+function !vencord
+    # description: Vencord installer! NOTE: DISCORD NEEDS TO BE INSTALLED VIA FLATHUB!
+    # category: MISC
+    sh -c "$(curl -sS https://vencord.dev/install.sh)"
+end
+
+#----------------------------------------------------------
+# LOG
+#----------------------------------------------------------
+
+function !log
+    # description: Show the remote update log
+    # category: MISC
+
+    set -l theme ~/.config/omarchy/current/theme/colors.toml
+    set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+    set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+
+    set -l log_url "https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/update.log?$(date +%s)"
+    set -l logs (curl -fsSL --max-time 5 "$log_url" 2>/dev/null)
+
+    if test $status -ne 0 -o (count $logs) -eq 0
+        set_color $accent
+        printf "╭──────────────────────────────────────╮\n"
+        set_color $foreground
+        printf "│  ── LOG                              │\n"
+        printf "│  Unable to retrieve update log.      │\n"
+        set_color $accent
+        printf "╰──────────────────────────────────────╯\n"
+        set_color normal
+        return 1
+    end
+
+    set -l max_width 95
+    set -l wrapped_logs
+
+    for line in $logs
+        set -l first_line 1
+
+        while test (string length -- "$line") -gt $max_width
+            set -l chunk (string sub -s 1 -l $max_width -- "$line")
+            set wrapped_logs $wrapped_logs "$chunk"
+            set line (string sub -s (math $max_width + 1) -- "$line")
+            set first_line 0
+        end
+
+        if test $first_line -eq 0
+            set wrapped_logs $wrapped_logs " $line"
+        else
+            set wrapped_logs $wrapped_logs "$line"
+        end
+    end
+
+    set -l content_width 6
+
+    for line in $wrapped_logs
+        set -l length (string length -- "$line")
+
+        if test $length -gt $content_width
+            set content_width $length
+        end
+    end
+
+    set -l box_width (math $content_width + 4)
+    set -l border (string repeat -n $box_width "─")
+
+    printf "\n"
+
+    set_color $accent
+    printf "╭%s╮\n" "$border"
+
+    printf "│  "
+    set_color $accent
+    printf "── LOG"
+
+    set -l header_padding (math $content_width - 6)
+
+    if test $header_padding -gt 0
+        set_color $foreground
+        printf "%*s" $header_padding ""
+    end
+
+    set_color $accent
+    printf "  │\n"
+
+    for line in $wrapped_logs
+        set -l length (string length -- "$line")
+        set -l padding (math $content_width - $length)
+
+        set_color $accent
+        printf "│  "
+
+        set_color $foreground
+        printf "%s" "$line"
+
+        if test $padding -gt 0
+            printf "%*s" $padding ""
+        end
+
+        set_color $accent
+        printf "  │\n"
+    end
+
+    set_color $accent
+    printf "╰%s╯\n" "$border"
+
+    set_color normal
+    printf "\n"
+end
+
+# ---------------------------------------------------------
 # WEATHER
 # ---------------------------------------------------------
 
@@ -408,12 +627,6 @@ function !cw
     # category: MISC
     clear
     !w
-end
-
-function !wlegacy
-    # description: Weather info [LEGACY] / Provided by wttr.in
-    # category: MISC
-    curl https://wttr.in
 end
 
 function !w
@@ -679,7 +892,9 @@ end
 # ALIASES
 # ---------------------------------------------------------
 alias ff='fzf --preview "bat --style=numbers --color=always {}"'
-# description: FileFinder / Provided by OMARCHY
+
+alias !ff='fzf --preview "bat --style=numbers --color=always {}"'
+# description: FileFinder / Provided by OMARCHY / NOTE; just "ff" works as-well
 # category: ALIASES
 
 alias !h='!help'
@@ -690,9 +905,30 @@ alias !cmds='!help'
 # description: Alternative command alias to '!help'
 # category: ALIASES
 
-alias !wl="!wlegacy"
-# description: Shorter command for weather legacy!
+alias !l='!log'
+# description: Shortcut for accessing the logs
 # category: ALIASES
+
+alias !vi="!vencord"
+# description: Shortcut for the '!vencord' command
+# category: ALIASES
+
+alias !cfgs="!cfgsource"
+# description: Shortcut for the '!cfgsource' command
+# category: ALIASES
+
+function yay
+    # description: Turns the '--noconfirm' argument into a much simpler '-y'
+    set args $argv
+
+    for i in (seq (count $args))
+        if test "$args[$i]" = -y
+            set args[$i] --noconfirm
+        end
+    end
+
+    command yay $args
+end
 
 # ---------------------------------------------------------
 # PROMPT
@@ -736,7 +972,6 @@ function !help
 
     while read -l line
 
-        # Function name
         set -l match (string match -r '^function[[:space:]]+(![^[:space:]]+)' -- $line)
 
         if test (count $match) -eq 2
@@ -745,7 +980,6 @@ function !help
             continue
         end
 
-        # Description
         if test -n "$current_name"
             set -l description_match (string match -r '^[[:space:]]*#[[:space:]]*description:[[:space:]]*(.+)$' -- $line)
 
@@ -755,7 +989,6 @@ function !help
             end
         end
 
-        # Alias
         set -l alias_match (string match -r '^[[:space:]]*alias[[:space:]]+(!?[^=[:space:]]+)=' -- $line)
 
         if test (count $alias_match) -eq 2
@@ -764,7 +997,6 @@ function !help
             continue
         end
 
-        # Category
         if test -n "$current_name"
             set -l category_match (string match -r '^[[:space:]]*#[[:space:]]*category:[[:space:]]*(.+)$' -- $line)
 
@@ -937,4 +1169,22 @@ function !help
 
     set_color normal
     printf "\n"
+end
+
+#-------------------------------------------------------------
+# PERSONAL-NOT-FOR-COPY
+#-------------------------------------------------------------
+
+function !mount
+    # description: Mounts the D: drive
+    # category: PERSONAL
+    sudo mount /dev/sdb2 /mnt/games
+end
+
+function !sf
+    # description: Spiderfoot
+    # category: PERSONAL
+    cd ~/spiderfoot
+    source .venv/bin/activate.fish
+    python sf.py -l 127.0.0.1:5001
 end
