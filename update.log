@@ -10,3 +10,6 @@
 
  ── 12th of August 2026
  + Cache timer added into the info box
+
+ ── 15th of August 2026
+ - Removed '!trace' command as it was broken
