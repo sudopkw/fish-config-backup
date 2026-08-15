@@ -423,17 +423,6 @@ function !ping
     ping -c 4 1.1.1.1
 end
 
-function !trace
-    # description: Trace the route to a host
-    # category: NET
-
-    if test (count $argv) -eq 0
-        echo "Usage: !trace <host>"
-        return 1
-    end
-
-    traceroute $argv[1]
-end
 
 # ---------------------------------------------------------
 # GIT
