@@ -469,7 +469,7 @@ function !gc
         echo "Usage: !gc <commit message>"
         return 1
     end
-    git commit -m %argv[1]
+    git commit -m $argv[1]
 end
 
 function !gp
