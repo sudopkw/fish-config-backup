@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 function fish_greeting
-    set -l theme ~/.config/omarchy/current/theme/colors.toml
+    set -l theme ~/.local/state/omarchy/current/theme/colors.toml
     set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
     set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
 
@@ -540,7 +540,7 @@ function !log
     # description: Show the remote update log
     # category: MISC
 
-    set -l theme ~/.config/omarchy/current/theme/colors.toml
+    set -l theme ~/.local/state/omarchy/current/theme/colors.toml
     set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
     set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
 
@@ -651,7 +651,7 @@ function !w
     # description: Weather info / Provided by wttr.in
     # category: MISC
 
-    set -l theme ~/.config/omarchy/current/theme/colors.toml
+    set -l theme ~/.local/state/omarchy/current/theme/colors.toml
 
     set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
     set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
@@ -971,7 +971,7 @@ function !help
     # description: Show custom Fish commands and descriptions
 
     set -l config ~/.config/fish/config.fish
-    set -l theme ~/.config/omarchy/current/theme/colors.toml
+    set -l theme ~/.local/state/omarchy/current/theme/colors.toml
     set -l commands
 
     set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
