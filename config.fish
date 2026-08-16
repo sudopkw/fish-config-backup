@@ -343,7 +343,7 @@ end
 function !upd
     # description: Update Arch Linux and installed packages
     # category: SYS
-    sudo pacman -Syu
+    sudo pacman -Syu --noconfirm
 end
 
 function !clean
@@ -423,6 +423,17 @@ function !ping
     ping -c 4 1.1.1.1
 end
 
+function !trace
+    # description: Trace the route to a host
+    # category: NET
+
+    if test (count $argv) -eq 0
+        echo "Usage: !trace <host>"
+        return 1
+    end
+
+    traceroute $argv[1]
+end
 
 # ---------------------------------------------------------
 # GIT
@@ -1158,4 +1169,8 @@ function !help
 
     set_color normal
     printf "\n"
+end
+
+if test -f ~/.config/fish/personal.fish
+    source ~/.config/fish/personal.fish
 end
