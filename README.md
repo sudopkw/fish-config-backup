@@ -26,9 +26,11 @@ curl -fsSL https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/con
 
 # HOW 2 MY CUSTOM FUNCTIONZ!!!!!!!!!!!!
 ```
-step 1: make function
-How? read the damn fish wiki
-Jokes aside:
+## step 1: create a personal.fish file
+This will make sure that your own commands do not get re-written once you update.
+## Not creating a personal.fish file inside of ~/.config/fish/ will rewrite every custom command you add during updates.
+inside the personal.fish file, follow the steps for making your own custom commands below:
+
 ```
 ## Make sure your custom function starts with ' ! ', it is the default prefix!
 ```
@@ -70,7 +72,9 @@ function !example
 end
 ```
 Yes, Spaces do indeed work in categories. I just personally wouldn't use them, but it's completely up to you what you do with your system.
-
+## NOTE: When adding custom commands, you most likely won't be able to categorize them in for example SYS. 
+Instead, Just add a tag like `# personal`. It will make it look cleaner, and this way you can actually have it clear of other commands and inside of the '!help' function.
+In fact, I've done this too for some commands that i do not wish to update to the main config as it would reguire you guys to install a bunch of other stuff you don't need.
 # HOW 2 USE TOR COMMAND 4 NEWBIES!!11!1!!!
 ```
 After installing tor, Run the !tor command.
