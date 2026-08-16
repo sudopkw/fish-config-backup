@@ -469,6 +469,7 @@ function !gc
         echo "Usage: !gc <commit message>"
         return 1
     end
+    git commit -m %argv[1]
 end
 
 function !gp
@@ -1191,4 +1192,3 @@ end
 if test -f ~/.config/fish/personal.fish
     source ~/.config/fish/personal.fish
 end
-# git push test
