@@ -146,29 +146,29 @@ function fish_greeting
 
     set -l info_rows \
         "🗓  Date: $today" \
-        "🌍 Currently in: $country, $city" \
+        "🏚  Currently in: $country, $city" \
         "☁  Weather: $weather"
 
     if test "$vpn_status" = true
-        set -a info_rows "👓 VPN: TRUE"
+        set -a info_rows "🕶 VPN: TRUE"
     else
         set -a info_rows "👁  VPN: FALSE"
     end
 
     if test "$tor_status" = true
-        set -a info_rows "🩸 TOR: TRUE"
+        set -a info_rows "🗝  TOR: TRUE"
     else
-        set -a info_rows "💉 TOR: FALSE"
+        set -a info_rows "🗝  TOR: FALSE"
     end
 
-    set -a info_rows "⏰ $cached_text"
+    set -a info_rows "🕰  $cached_text"
 
     set -l content_width 0
 
     for row in $info_rows
         set -l length (string length --visible -- "$row")
 
-        if string match -q "*☁️*" -- "$row"
+        if string match -q "*☁ *" -- "$row"
             set length (math $length + 1)
         end
 
