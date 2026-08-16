@@ -383,6 +383,12 @@ function !cfgsource
     xdg-open "https://github.com/sudopkw/fish-config-backup"
 end
 
+function !src
+    # description: Sources newest fish edits 
+    # category: SYS
+    source ~/.config/fish/config.fish
+end
+
 function !cc
     # description: Clears cache
     # category: SYS
