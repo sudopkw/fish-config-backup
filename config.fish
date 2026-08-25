@@ -161,6 +161,12 @@ function fish_greeting
         set -a info_rows "🗝  TOR: FALSE"
     end
 
+    if test -f ~/.config/fish/personal.fish
+        source ~/.config/fish/personal.fish
+        set -a info_rows "♥︎  Personal.fish: TRUE"
+    else
+        set -a info_rows "♥︎  Personal.fish: FALSE"
+    end
     set -a info_rows "🕰  $cached_text"
 
     set -l content_width 0
@@ -969,8 +975,9 @@ end
 
 function !help
     # description: Show custom Fish commands and descriptions
+    # category: SYS
 
-    set -l config ~/.config/fish/config.fish
+    set -l configs ~/.config/fish/config.fish ~/.config/fish/personal.fish
     set -l theme ~/.local/state/omarchy/current/theme/colors.toml
     set -l commands
 
@@ -987,50 +994,50 @@ function !help
 
     set -l current_name ""
     set -l current_description ""
+    for config in $configs
+        while read -l line
 
-    while read -l line
+            set -l match (string match -r '^function[[:space:]]+(![^[:space:]]+)' -- $line)
 
-        set -l match (string match -r '^function[[:space:]]+(![^[:space:]]+)' -- $line)
-
-        if test (count $match) -eq 2
-            set current_name $match[2]
-            set current_description ""
-            continue
-        end
-
-        if test -n "$current_name"
-            set -l description_match (string match -r '^[[:space:]]*#[[:space:]]*description:[[:space:]]*(.+)$' -- $line)
-
-            if test (count $description_match) -eq 2
-                set current_description $description_match[2]
+            if test (count $match) -eq 2
+                set current_name $match[2]
+                set current_description ""
                 continue
             end
-        end
 
-        set -l alias_match (string match -r '^[[:space:]]*alias[[:space:]]+(!?[^=[:space:]]+)=' -- $line)
+            if test -n "$current_name"
+                set -l description_match (string match -r '^[[:space:]]*#[[:space:]]*description:[[:space:]]*(.+)$' -- $line)
 
-        if test (count $alias_match) -eq 2
-            set current_name $alias_match[2]
-            set current_description alias
-            continue
-        end
-
-        if test -n "$current_name"
-            set -l category_match (string match -r '^[[:space:]]*#[[:space:]]*category:[[:space:]]*(.+)$' -- $line)
-
-            if test (count $category_match) -eq 2
-                set -l category $category_match[2]
-
-                if test -n "$current_description"
-                    set -a commands "$category|$current_name|$current_description"
-
-                    set current_name ""
-                    set current_description ""
+                if test (count $description_match) -eq 2
+                    set current_description $description_match[2]
+                    continue
                 end
             end
-        end
-    end <$config
 
+            set -l alias_match (string match -r '^[[:space:]]*alias[[:space:]]+(!?[^=[:space:]]+)=' -- $line)
+
+            if test (count $alias_match) -eq 2
+                set current_name $alias_match[2]
+                set current_description alias
+                continue
+            end
+
+            if test -n "$current_name"
+                set -l category_match (string match -r '^[[:space:]]*#[[:space:]]*category:[[:space:]]*(.+)$' -- $line)
+
+                if test (count $category_match) -eq 2
+                    set -l category $category_match[2]
+
+                    if test -n "$current_description"
+                        set -a commands "$category|$current_name|$current_description"
+
+                        set current_name ""
+                        set current_description ""
+                    end
+                end
+            end
+        end <$config
+    end
     if test (count $commands) -eq 0
         printf "\n"
 
@@ -1187,8 +1194,4 @@ function !help
 
     set_color normal
     printf "\n"
-end
-
-if test -f ~/.config/fish/personal.fish
-    source ~/.config/fish/personal.fish
 end

@@ -23,7 +23,6 @@
  + updated emoji list 
 
  ── 25th of August 2026
- +- Nothing.
- +- I added nothing.
- +- Nothing ever happens.
+ + Fixed personal.fish commands not showing up in !help.
+ + Added personal.fish info -- true/false
 
