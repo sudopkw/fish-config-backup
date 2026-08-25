@@ -26,3 +26,7 @@
  + Fixed personal.fish commands not showing up in !help.
  + Added personal.fish info -- true/false
 
+ ── 26th of August 2026
+ + Added modules. Sutff like GIT, NET, TOR, Etc. are all optional modules.
+ + Added !install and !modules command to support this feature. 
+   You can directly install modules trough the !install command.

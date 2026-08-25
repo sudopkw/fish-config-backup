@@ -1,5 +1,5 @@
 # ---------------------------------------------------------
-# GREETING
+# FISH-GREETING
 # ---------------------------------------------------------
 
 function fish_greeting
@@ -7,11 +7,17 @@ function fish_greeting
     set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
     set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
 
-    test -n "$accent"; or set accent normal
-    test -n "$foreground"; or set foreground normal
+    if test -z "$accent"
+        set accent normal
+    end
+
+    if test -z "$foreground"
+        set foreground normal
+    end
 
     set -l cache_dir ~/.cache/pkw
     set -l cache_age 1800
+
     mkdir -p $cache_dir
 
     set -l info_cache $cache_dir/ipinfo
@@ -36,10 +42,9 @@ function fish_greeting
         end
     end
 
-    set -l ip (echo $info | jq -r '.ip // "Unknown"')
-    set -l country (echo $info | jq -r '.country // "Unknown"')
-    set -l city (echo $info | jq -r '.city // "Unknown"')
-    set -l vpn_status (echo $info | jq -r '.privacy.vpn // "false"')
+    set -l ip (echo $info | jq -r '.ip')
+    set -l country (echo $info | jq -r '.country')
+    set -l city (echo $info | jq -r '.city')
 
     set -l today (date "+%A, %B %d")
 
@@ -67,6 +72,8 @@ function fish_greeting
         end
     end
 
+    set -l vpn_status (echo $info | jq -r '.privacy.vpn // "false"')
+
     set -l tor_cache $cache_dir/tor
     set -l tor_status
 
@@ -80,10 +87,7 @@ function fish_greeting
     end
 
     if test -z "$tor_status"
-        set tor_status (curl -s --max-time 2 \
-            --socks5 127.0.0.1:1337 \
-            https://check.torproject.org/api/ip 2>/dev/null |
-            jq -r '.IsTor // "false"')
+        set tor_status (curl -s --max-time 2 --socks5 127.0.0.1:1337 https://check.torproject.org/api/ip 2>/dev/null | jq -r '.IsTor // "false"')
 
         if test $status -eq 0; and test -n "$tor_status"
             printf "%s" "$tor_status" >$tor_cache
@@ -138,7 +142,7 @@ function fish_greeting
         "Remember to update your config, $USER!" \
         "Access Authorized! Welcome back, $USER."
 
-    set -l quote $greetings[(random 1 (count $greetings))]
+    set -l quote ""$greetings[(random 1 (count $greetings))]
 
     set -l info_rows \
         "🗓  Date: $today" \
@@ -188,8 +192,13 @@ function fish_greeting
     set -l info_category_length (string length --visible -- "── INFO")
     set -l greeting_category_length (string length --visible -- "── GREETING")
 
-    test $info_category_length -le $content_width; or set content_width $info_category_length
-    test $greeting_category_length -le $content_width; or set content_width $greeting_category_length
+    if test $info_category_length -gt $content_width
+        set content_width $info_category_length
+    end
+
+    if test $greeting_category_length -gt $content_width
+        set content_width $greeting_category_length
+    end
 
     set -l box_width (math $content_width + 4)
     set -l border (string repeat -n $box_width "─")
@@ -198,13 +207,16 @@ function fish_greeting
 
     set_color $accent
     printf "╭%s╮\n" "$border"
-    printf "│  ── INFO"
 
-    set -l padding (math $content_width - 7)
+    printf "│  "
+    set_color $accent
+    printf "── INFO"
 
-    if test $padding -gt 0
+    set -l category_padding (math $content_width - 7)
+
+    if test $category_padding -gt 0
         set_color $foreground
-        printf "%*s" $padding ""
+        printf "%*s" $category_padding ""
     end
 
     set_color $accent
@@ -217,10 +229,11 @@ function fish_greeting
             set length (math $length + 1)
         end
 
-        set padding (math $content_width - $length)
+        set -l padding (math $content_width - $length)
 
         set_color $accent
         printf "│  "
+
         set_color $foreground
         printf "%s" "$row"
 
@@ -234,37 +247,43 @@ function fish_greeting
 
     set_color $accent
     printf "│"
+
     set_color $foreground
-    printf "%*s" $box_width ""
+    printf "%*s" (math $box_width) ""
+
     set_color $accent
     printf "│\n"
 
+    set_color $accent
     printf "│  ── GREETING"
 
-    set padding (math $content_width - 11)
+    set -l category_padding (math $content_width - 11)
 
-    if test $padding -gt 0
+    if test $category_padding -gt 0
         set_color $foreground
-        printf "%*s" $padding ""
+        printf "%*s" $category_padding ""
     end
 
     set_color $accent
     printf "  │\n"
 
     set -l quote_length (string length --visible -- "$quote")
-    set padding (math $content_width - $quote_length)
+    set -l quote_padding (math $content_width - $quote_length)
 
     set_color $accent
     printf "│  "
+
     set_color $foreground
     printf "%s" "$quote"
 
-    if test $padding -gt 0
-        printf "%*s" $padding ""
+    if test $quote_padding -gt 0
+        printf "%*s" $quote_padding ""
     end
 
     set_color $accent
     printf "  │\n"
+
+    set_color $accent
     printf "╰%s╯\n" "$border"
 
     set_color normal
@@ -273,19 +292,11 @@ function fish_greeting
 end
 
 # ---------------------------------------------------------
-# PROMPT
+# TOR STATUS FOR GREETING
 # ---------------------------------------------------------
 
-function fish_prompt
-    if test $status -ne 0
-        set_color red
-        echo -n " ✘ "
-        set_color normal
-    else
-        set_color normal
-        echo -n " ➜ "
-    end
-end
+# TOR commands themselves are loaded from modules/tor.fish.
+# The greeting only checks the cached status.
 
 # ---------------------------------------------------------
 # SYSTEM
@@ -298,7 +309,7 @@ function !upd
 end
 
 function !clean
-    # description: Clean package cache and remove orphan packages
+    # description: Clean up package cache and remove orphan packages
     # category: SYS
 
     echo "Removing orphan packages..."
@@ -316,170 +327,35 @@ function !clean
 end
 
 function !fs
-    # description: Show failed systemd services
+    # description: Show failed systemd services (EW SYSTEMD!!!!!1111!!!11)
     # category: SYS
     systemctl --failed
 end
 
 function !ucfg
-    # description: Update config from GitHub
+    # description: Updates the config to the latest version!
     # category: SYS
-
-    curl -fsSL \
-        https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/config.fish \
+    curl -fsSL https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/config.fish \
         -o ~/.config/fish/config.fish
 end
 
 function !cfgsource
-    # description: Open config source
+    # description: Opens the config source code
     # category: SYS
     xdg-open "https://github.com/sudopkw/fish-config-backup"
 end
 
 function !src
-    # description: Source config
+    # description: Sources newest fish edits
     # category: SYS
     source ~/.config/fish/config.fish
 end
 
 function !cc
-    # description: Clear PKW cache
+    # description: Clears cache
     # category: SYS
-
     rm -rf ~/.cache/pkw
     echo "Cache cleared."
-end
-
-# ---------------------------------------------------------
-# MODULE MANAGER
-# ---------------------------------------------------------
-
-function !modules
-    # description: Install, remove and manage Fish modules
-    # category: SYS
-
-    set -l repo sudopkw/fish-config-backup
-    set -l api "https://api.github.com/repos/$repo/contents/modules"
-    set -l module_dir ~/.config/fish/modules
-
-    mkdir -p $module_dir
-
-    if not command -q curl
-        echo "curl is required."
-        return 1
-    end
-
-    if not command -q jq
-        echo "jq is required: sudo pacman -S jq"
-        return 1
-    end
-
-    set -l available (curl -fsSL "$api" 2>/dev/null |
-        jq -r '.[] | select(.name | endswith(".fish")) | .name' 2>/dev/null)
-
-    if test $status -ne 0 -o (count $available) -eq 0
-        echo "Unable to retrieve module list."
-        return 1
-    end
-
-    while true
-        printf "\n"
-        echo "Available modules:"
-        echo
-
-        set -l index 0
-
-        for module in $available
-            set index (math $index + 1)
-            set -l name (string replace '.fish' '' -- $module)
-
-            if test -f "$module_dir/$module"
-                echo "  [$index] $name [installed]"
-            else
-                echo "  [$index] $name"
-            end
-        end
-
-        echo
-        echo "  [i] Install module"
-        echo "  [r] Remove module"
-        echo "  [q] Quit"
-        echo
-
-        read -P "Select: " choice
-
-        switch $choice
-            case q Q
-                break
-
-            case i I
-                read -P "Module name: " name
-
-                if not string match -q "*.fish" -- $name
-                    set name "$name.fish"
-                end
-
-                if not contains -- $name $available
-                    echo "Module does not exist."
-                    continue
-                end
-
-                set -l url "https://raw.githubusercontent.com/$repo/main/modules/$name"
-
-                if curl -fsSL "$url" -o "$module_dir/$name"
-                    echo "Installed: $name"
-                else
-                    echo "Failed to install: $name"
-                    rm -f "$module_dir/$name"
-                end
-
-            case r R
-                read -P "Module name: " name
-
-                if not string match -q "*.fish" -- $name
-                    set name "$name.fish"
-                end
-
-                if test -f "$module_dir/$name"
-                    rm "$module_dir/$name"
-                    echo "Removed: $name"
-                else
-                    echo "Module is not installed."
-                end
-
-            case '*'
-                if string match -rq '^[0-9]+$' -- $choice
-                    set -l selected $available[$choice]
-
-                    if test -z "$selected"
-                        echo "Invalid selection."
-                        continue
-                    end
-
-                    if test -f "$module_dir/$selected"
-                        echo "$selected is already installed."
-                        continue
-                    end
-
-                    set -l url "https://raw.githubusercontent.com/$repo/main/modules/$selected"
-
-                    if curl -fsSL "$url" -o "$module_dir/$selected"
-                        echo "Installed: $selected"
-                    else
-                        echo "Failed to install: $selected"
-                        rm -f "$module_dir/$selected"
-                    end
-                else
-                    echo "Invalid selection."
-                end
-        end
-    end
-end
-
-function !install
-    # description: Open the Fish module installer
-    # category: SYS
-    !modules
 end
 
 # ---------------------------------------------------------
@@ -487,7 +363,7 @@ end
 # ---------------------------------------------------------
 
 function !vencord
-    # description: Vencord installer
+    # description: Vencord installer! NOTE: DISCORD NEEDS TO BE INSTALLED VIA FLATHUB!
     # category: MISC
     sh -c "$(curl -sS https://vencord.dev/install.sh)"
 end
@@ -497,15 +373,12 @@ end
 # ---------------------------------------------------------
 
 function !log
-    # description: Show remote update log
+    # description: Show the remote update log
     # category: MISC
 
     set -l theme ~/.local/state/omarchy/current/theme/colors.toml
     set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
     set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
-
-    test -n "$accent"; or set accent normal
-    test -n "$foreground"; or set foreground normal
 
     set -l log_url "https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/update.log?$(date +%s)"
     set -l logs (curl -fsSL --max-time 5 "$log_url" 2>/dev/null)
@@ -526,12 +399,20 @@ function !log
     set -l wrapped_logs
 
     for line in $logs
+        set -l first_line 1
+
         while test (string length -- "$line") -gt $max_width
-            set -a wrapped_logs (string sub -s 1 -l $max_width -- "$line")
+            set -l chunk (string sub -s 1 -l $max_width -- "$line")
+            set wrapped_logs $wrapped_logs "$chunk"
             set line (string sub -s (math $max_width + 1) -- "$line")
+            set first_line 0
         end
 
-        set -a wrapped_logs "$line"
+        if test $first_line -eq 0
+            set wrapped_logs $wrapped_logs " $line"
+        else
+            set wrapped_logs $wrapped_logs "$line"
+        end
     end
 
     set -l content_width 6
@@ -548,15 +429,19 @@ function !log
     set -l border (string repeat -n $box_width "─")
 
     printf "\n"
+
     set_color $accent
     printf "╭%s╮\n" "$border"
-    printf "│  ── LOG"
 
-    set -l padding (math $content_width - 6)
+    printf "│  "
+    set_color $accent
+    printf "── LOG"
 
-    if test $padding -gt 0
+    set -l header_padding (math $content_width - 6)
+
+    if test $header_padding -gt 0
         set_color $foreground
-        printf "%*s" $padding ""
+        printf "%*s" $header_padding ""
     end
 
     set_color $accent
@@ -564,10 +449,11 @@ function !log
 
     for line in $wrapped_logs
         set -l length (string length -- "$line")
-        set padding (math $content_width - $length)
+        set -l padding (math $content_width - $length)
 
         set_color $accent
         printf "│  "
+
         set_color $foreground
         printf "%s" "$line"
 
@@ -579,7 +465,9 @@ function !log
         printf "  │\n"
     end
 
+    set_color $accent
     printf "╰%s╯\n" "$border"
+
     set_color normal
     printf "\n"
 end
@@ -589,43 +477,60 @@ end
 # ---------------------------------------------------------
 
 function !cw
-    # description: Clear terminal and show weather
+    # description: Weateher info, But clears your terminal beforehand. *For screenies*
     # category: MISC
     clear
     !w
 end
 
 function !w
-    # description: Weather information from wttr.in
+    # description: Weather info / Provided by wttr.in
     # category: MISC
 
     set -l theme ~/.local/state/omarchy/current/theme/colors.toml
+
     set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
     set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
 
-    test -n "$accent"; or set accent normal
-    test -n "$foreground"; or set foreground normal
+    if test -z "$accent"
+        set accent normal
+    end
+
+    if test -z "$foreground"
+        set foreground normal
+    end
 
     if not command -q curl
-        echo "curl is required."
+        printf "curl is required.\n"
         return 1
     end
 
     if not command -q jq
-        echo "jq is required: sudo pacman -S jq"
+        printf "jq is required: sudo pacman -S jq\n"
         return 1
     end
 
-    set -l json (curl -sS --fail --max-time 10 \
-        'https://wttr.in/?format=j1' 2>/dev/null)
+    set -l json (curl -sS --fail --max-time 10 'https://wttr.in/?format=j1' 2>/dev/null)
 
     if test $status -ne 0 -o -z "$json"
-        echo "Unable to retrieve weather data."
+        printf "\n"
+
+        set_color $accent
+        printf "╭───────────────────────────────────────────────╮\n"
+
+        set_color $foreground
+        printf "│ Unable to retrieve weather data.              "
+
+        set_color $accent
+        printf "│\n"
+        printf "╰───────────────────────────────────────────────╯\n"
+
+        set_color normal
+        printf "\n"
         return 1
     end
 
-    set -l location (printf '%s\n' $json |
-        jq -r '.nearest_area[0].areaName[0].value // "Unknown"')
+    set -l location (printf '%s\n' $json | jq -r '.nearest_area[0].areaName[0].value // "Unknown"')
 
     function __weather_icon --argument-names code
         switch $code
@@ -657,9 +562,27 @@ function !w
         "DAY|\(.date)",
         "Morning|09:00|\(.hourly[2].weatherCode)|\(.hourly[2].tempC)|\(.hourly[2].FeelsLikeC)|\(.hourly[2].weatherDesc[0].value)|\(.hourly[2].chanceofrain)|\(.hourly[2].humidity)|\(.hourly[2].windspeedKmph)|\(.hourly[2].winddir16Point)",
         "Noon|12:00|\(.hourly[4].weatherCode)|\(.hourly[4].tempC)|\(.hourly[4].FeelsLikeC)|\(.hourly[4].weatherDesc[0].value)|\(.hourly[4].chanceofrain)|\(.hourly[4].humidity)|\(.hourly[4].windspeedKmph)|\(.hourly[4].winddir16Point)",
-        "Evening|18:00|\(.hourly[6].weatherCode)|\(.hourly[6].tempC)|\(.hourly[6].FeelsLikeC)|\(.hourly[6].weatherDesc[0].value)|\(.hourly[6].chanceofrain)|\(.hourly[6].humidity)|\(.hourly[6].windspeedKmph)|\(.hourly[6].winddir16Point)",
+        "Evening|18:00|\(.hourly[6].weatherCode)|\(.hourly[6].tempC)|\(.hourly[6].FeelsLikeC)|\(.hourly[6].FeelsLikeC)|\(.hourly[6].weatherDesc[0].value)|\(.hourly[6].chanceofrain)|\(.hourly[6].humidity)|\(.hourly[6].windspeedKmph)|\(.hourly[6].winddir16Point)",
         "Night|21:00|\(.hourly[7].weatherCode)|\(.hourly[7].tempC)|\(.hourly[7].FeelsLikeC)|\(.hourly[7].weatherDesc[0].value)|\(.hourly[7].chanceofrain)|\(.hourly[7].humidity)|\(.hourly[7].windspeedKmph)|\(.hourly[7].winddir16Point)"
     ' 2>/dev/null)
+
+    if test $status -ne 0 -o (count $forecast) -eq 0
+        printf "\n"
+
+        set_color $accent
+        printf "╭───────────────────────────────────────────────╮\n"
+
+        set_color $foreground
+        printf "│ Failed to parse weather forecast.             "
+
+        set_color $accent
+        printf "│\n"
+        printf "╰───────────────────────────────────────────────╯\n"
+
+        set_color normal
+        printf "\n"
+        return 1
+    end
 
     set -l rows
 
@@ -668,7 +591,11 @@ function !w
 
         if test "$parts[1]" = DAY
             set -l day_name (__weather_day $parts[2])
-            test -n "$day_name"; or set day_name $parts[2]
+
+            if test -z "$day_name"
+                set day_name $parts[2]
+            end
+
             set -a rows "DAY|  ── $day_name"
             continue
         end
@@ -689,10 +616,16 @@ function !w
             set condition (string sub -l 18 -- $condition)
         end
 
-        set -l line (printf \
-            "  %-9s %s  %3s°C  %-18s  Feels %3s°C  Rain %3s%%  Hum %3s%%  Wind %3s %s" \
-            "$period" "$icon" "$temp" "$condition" "$feels" "$rain" \
-            "$humidity" "$wind" "$direction")
+        set -l line (printf "  %-9s %s  %3s°C  %-18s  Feels %3s°C  Rain %3s%%  Hum %3s%%  Wind %3s %s" \
+            "$period" \
+            "$icon" \
+            "$temp" \
+            "$condition" \
+            "$feels" \
+            "$rain" \
+            "$humidity" \
+            "$wind" \
+            "$direction")
 
         set -a rows "ROW|$line"
     end
@@ -701,7 +634,8 @@ function !w
 
     for entry in $rows
         set -l parts (string split "|" -- $entry)
-        set -l length (string length -- $parts[2])
+        set -l content $parts[2]
+        set -l length (string length -- $content)
 
         if test $length -gt $max_length
             set max_length $length
@@ -719,19 +653,26 @@ function !w
     set -l border (string repeat -n $inner_width "─")
 
     printf "\n"
+
     set_color $accent
     printf "╭%s╮\n" "$border"
-    printf "│%s" "$header"
 
+    set_color $accent
+    printf "│"
+    printf "%s" "$header"
     set_color $foreground
-    set -l padding (math $inner_width - $header_length)
 
-    if test $padding -gt 0
-        printf "%*s" $padding ""
+    set -l header_padding (math $inner_width - (string length -- $header))
+
+    if test $header_padding -gt 0
+        printf "%*s" $header_padding ""
     end
 
     set_color $accent
-    printf "│\n│"
+    printf "│\n"
+
+    set_color $accent
+    printf "│"
 
     set_color $foreground
     printf "%*s" $inner_width ""
@@ -758,29 +699,32 @@ function !w
         end
 
         set -l content_length (string length -- $content)
-        set padding (math $inner_width - $content_length - 1)
+        set -l padding (math $inner_width - $content_length - 1)
 
         if string match -q "*⛅*" -- $content
             set padding (math $padding - 1)
         end
 
-        test $padding -ge 0; or set padding 0
+        if test $padding -lt 0
+            set padding 0
+        end
 
         set_color $accent
-        printf "│ "
+        printf "│"
+
         set_color $foreground
+        printf " "
 
         if test "$type" = DAY
             set_color $accent
+        else
+            set_color $foreground
         end
 
         printf "%s" "$content"
 
         set_color $foreground
-
-        if test $padding -gt 0
-            printf "%*s" $padding ""
-        end
+        printf "%*s" $padding ""
 
         set_color $accent
         printf "│\n"
@@ -788,7 +732,9 @@ function !w
         set previous_type $type
     end
 
+    set_color $accent
     printf "╰%s╯\n" "$border"
+
     set_color normal
     printf "\n"
 end
@@ -798,39 +744,38 @@ end
 # ---------------------------------------------------------
 
 alias ff='fzf --preview "bat --style=numbers --color=always {}"'
+
 alias !ff='fzf --preview "bat --style=numbers --color=always {}"'
-# description: File finder
+# description: FileFinder / Provided by OMARCHY / NOTE; just "ff" works as-well
 # category: ALIASES
 
 alias !h='!help'
-# description: Short form of !help
+# description: Shorter way to get here!
 # category: ALIASES
 
 alias !cmds='!help'
-# description: Alternative !help alias
+# description: Alternative command alias to '!help'
 # category: ALIASES
 
 alias !l='!log'
-# description: Shortcut for !log
+# description: Shortcut for accessing the logs
 # category: ALIASES
 
-alias !vi='!vencord'
-# description: Shortcut for !vencord
+alias !vi="!vencord"
+# description: Shortcut for the '!vencord' command
 # category: ALIASES
 
-alias !cfgs='!cfgsource'
-# description: Shortcut for !cfgsource
+alias !cfgs="!cfgsource"
+# description: Shortcut for the '!cfgsource' command
 # category: ALIASES
 
 # ---------------------------------------------------------
-# YAY
+# YAY WRAPPER
 # ---------------------------------------------------------
 
 function yay
-    # description: Replace yay -y with --noconfirm
-    # category: MISC
-
-    set -l args $argv
+    # description: Turns the '--noconfirm' argument into a much simpler '-y'
+    set args $argv
 
     for i in (seq (count $args))
         if test "$args[$i]" = -y
@@ -846,34 +791,45 @@ end
 # ---------------------------------------------------------
 
 function !help
-    # description: Show custom commands and descriptions
+    # description: Show custom Fish commands and descriptions
     # category: SYS
 
     set -l configs ~/.config/fish/config.fish ~/.config/fish/personal.fish
+
     set -l module_dir ~/.config/fish/modules
 
     if test -d $module_dir
         for module in $module_dir/*.fish
-            test -f $module; and set -a configs $module
+            if test -f $module
+                set -a configs $module
+            end
         end
     end
 
     set -l theme ~/.local/state/omarchy/current/theme/colors.toml
+    set -l commands
+
     set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
     set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
 
-    test -n "$accent"; or set accent normal
-    test -n "$foreground"; or set foreground normal
+    if test -z "$accent"
+        set accent normal
+    end
 
-    set -l commands
+    if test -z "$foreground"
+        set foreground normal
+    end
+
+    set -l current_name ""
+    set -l current_description ""
 
     for config in $configs
-        test -f $config; or continue
-
-        set -l current_name ""
-        set -l current_description ""
+        if not test -f $config
+            continue
+        end
 
         while read -l line
+
             set -l match (string match -r '^function[[:space:]]+(![^[:space:]]+)' -- $line)
 
             if test (count $match) -eq 2
@@ -883,8 +839,7 @@ function !help
             end
 
             if test -n "$current_name"
-                set -l description_match \
-                    (string match -r '^[[:space:]]*#[[:space:]]*description:[[:space:]]*(.+)$' -- $line)
+                set -l description_match (string match -r '^[[:space:]]*#[[:space:]]*description:[[:space:]]*(.+)$' -- $line)
 
                 if test (count $description_match) -eq 2
                     set current_description $description_match[2]
@@ -892,8 +847,7 @@ function !help
                 end
             end
 
-            set -l alias_match \
-                (string match -r '^[[:space:]]*alias[[:space:]]+(!?[^=[:space:]]+)=' -- $line)
+            set -l alias_match (string match -r '^[[:space:]]*alias[[:space:]]+(!?[^=[:space:]]+)=' -- $line)
 
             if test (count $alias_match) -eq 2
                 set current_name $alias_match[2]
@@ -902,24 +856,39 @@ function !help
             end
 
             if test -n "$current_name"
-                set -l category_match \
-                    (string match -r '^[[:space:]]*#[[:space:]]*category:[[:space:]]*(.+)$' -- $line)
+                set -l category_match (string match -r '^[[:space:]]*#[[:space:]]*category:[[:space:]]*(.+)$' -- $line)
 
                 if test (count $category_match) -eq 2
-                    if test -n "$current_description"
-                        set -a commands \
-                            "$category_match[2]|$current_name|$current_description"
-                    end
+                    set -l category $category_match[2]
 
-                    set current_name ""
-                    set current_description ""
+                    if test -n "$current_description"
+                        set -a commands "$category|$current_name|$current_description"
+
+                        set current_name ""
+                        set current_description ""
+                    end
                 end
             end
+
         end <$config
     end
 
     if test (count $commands) -eq 0
-        echo "No custom commands found."
+        printf "\n"
+
+        set_color $accent
+        printf "╭───────────────────────────────────────────────╮\n"
+        printf "│"
+
+        set_color $foreground
+        printf " No custom commands found.                     "
+
+        set_color $accent
+        printf "│\n"
+        printf "╰───────────────────────────────────────────────╯\n"
+
+        set_color normal
+        printf "\n"
         return
     end
 
@@ -928,12 +897,19 @@ function !help
 
     for command in $commands
         set -l parts (string split "|" -- $command)
+        set -l name $parts[2]
+        set -l description $parts[3]
 
-        set -l name_len (string length -- $parts[2])
-        set -l desc_len (string length -- $parts[3])
+        set -l name_len (string length -- $name)
+        set -l desc_len (string length -- $description)
 
-        test $name_len -le $name_width; or set name_width $name_len
-        test $desc_len -le $desc_width; or set desc_width $desc_len
+        if test $name_len -gt $name_width
+            set name_width $name_len
+        end
+
+        if test $desc_len -gt $desc_width
+            set desc_width $desc_len
+        end
     end
 
     set -l rows
@@ -955,9 +931,11 @@ function !help
             set -a rows "CATEGORY|$category"
         end
 
-        set -a rows (printf "  %-*s   %-*s " \
+        set -l row (printf "  %-*s   %-*s " \
             $name_width "$name" \
             $desc_width "$description")
+
+        set -a rows "$row"
     end
 
     set -l width 0
@@ -965,40 +943,59 @@ function !help
     for row in $rows
         if string match -q "CATEGORY|*" -- $row
             set -l category (string replace "CATEGORY|" "" -- $row)
-            set -l length (string length -- "  ── $category")
+            set -l header_length (string length -- "  ── $category")
 
-            test $length -le $width; or set width $length
+            if test $header_length -gt $width
+                set width $header_length
+            end
         else
-            set -l length (string length -- $row)
-            test $length -le $width; or set width $length
+            set -l row_length (string length -- $row)
+
+            if test $row_length -gt $width
+                set width $row_length
+            end
         end
     end
 
     set width (math $width + 2)
+
     set -l border (string repeat -n $width "─")
 
     printf "\n"
+
     set_color $accent
     printf "╭%s╮\n" "$border"
 
     for row in $rows
+
         if test -z "$row"
+            set_color $accent
             printf "│"
+
             set_color $foreground
             printf "%*s" $width ""
+
             set_color $accent
             printf "│\n"
+
             continue
         end
 
         if string match -q "CATEGORY|*" -- $row
             set -l category (string replace "CATEGORY|" "" -- $row)
+
             set -l header "  ── $category"
-            set -l length (string length -- $header)
-            set -l padding (math $width - $length - 1)
+            set -l header_length (string length -- $header)
+            set -l padding (math $width - $header_length - 1)
+
+            if test $padding -lt 0
+                set padding 0
+            end
 
             set_color $accent
-            printf "│ %s" "$header"
+            printf "│"
+
+            printf " %s" "$header"
 
             if test $padding -gt 0
                 set_color $foreground
@@ -1007,9 +1004,10 @@ function !help
 
             set_color $accent
             printf "│\n"
+
         else
-            set -l length (string length -- $row)
-            set -l padding (math $width - $length)
+            set -l row_length (string length -- $row)
+            set -l padding (math $width - $row_length)
 
             if test $padding -gt 0
                 set row "$row"(string repeat -n $padding " ")
@@ -1017,14 +1015,18 @@ function !help
 
             set_color $accent
             printf "│"
+
             set_color $foreground
             printf "%s" "$row"
+
             set_color $accent
             printf "│\n"
         end
     end
 
+    set_color $accent
     printf "╰%s╯\n" "$border"
+
     set_color normal
     printf "\n"
 end
