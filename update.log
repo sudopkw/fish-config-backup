@@ -15,7 +15,7 @@
  - Removed '!trace' command as it was broken
 
  ── 16th of August 2026
- + added personal.config, now you can add your own commands and they will not get re-written if you update.
+ + added personal.fish configs, now you can add your own commands and they will not get re-written if you update.
  + DEV LOG: Now updating trough git
  + added fish sourcing as a command for accessibility
  + added '!ga' command
