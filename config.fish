@@ -361,80 +361,358 @@ function !modules
     set -l repo sudopkw/fish-config-backup
     set -l api "https://api.github.com/repos/$repo/contents/modules"
     set -l module_dir ~/.config/fish/modules
+    set -l theme ~/.local/state/omarchy/current/theme/colors.toml
+
+    set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+    set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+
+    if test -z "$accent"
+        set accent normal
+    end
+
+    if test -z "$foreground"
+        set foreground normal
+    end
+
+    set -l error_color red
 
     mkdir -p $module_dir
 
     if not command -q curl
-        echo "curl is required."
+        printf "curl is required.\n"
         return 1
     end
 
     if not command -q jq
-        echo "jq is required: sudo pacman -S jq"
+        printf "jq is required: sudo pacman -S jq\n"
         return 1
     end
 
-    set -l available (curl -fsSL "$api" 2>/dev/null |
-        jq -r '.[] | select(.name | endswith(".fish")) | .name' 2>/dev/null)
+    set -l response (curl -fsSL "$api" 2>&1)
 
-    if test $status -ne 0 -o (count $available) -eq 0
-        echo "Unable to retrieve module list."
+    if test $status -ne 0
+        printf "\n"
+
+        set_color $accent
+        printf "╭───────────────────────────────────────────────╮\n"
+
+        set_color $foreground
+        printf "│ Failed to retrieve module list. │\n"
+
+        set_color $accent
+        printf "╰───────────────────────────────────────────────╯\n"
+
+        set_color normal
+        printf "\n"
+
         return 1
+    end
+
+    set -l available (printf '%s\n' "$response" |
+jq -r '  .[] | select(.type == "file") | select(.name | endswith(".fish")) | .name' 2>/dev/null)
+
+    if test $status -ne 0
+        printf "\n"
+
+        set_color $accent
+        printf "╭───────────────────────────────────────────────╮\n"
+
+        set_color $foreground
+        printf "│ GitHub returned invalid module data. │\n"
+
+        set_color $accent
+        printf "╰───────────────────────────────────────────────╯\n"
+
+        set_color normal
+        printf "\n"
+
+        return 1
+    end
+
+    if test (count $available) -eq 0
+        printf "\n"
+
+        set_color $accent
+        printf "╭───────────────────────────────────────────────╮\n"
+
+        set_color $foreground
+        printf "│ No modules are currently available. │\n"
+
+        set_color $accent
+        printf "╰───────────────────────────────────────────────╯\n"
+
+        set_color normal
+        printf "\n"
+
+        return 0
     end
 
     while true
-        printf "\n"
-        echo "Available modules:"
-        echo
-
-        set -l index 0
+        set -l installed
+        set -l uninstalled
 
         for module in $available
-            set index (math $index + 1)
-            set -l name (string replace '.fish' '' -- $module)
-
             if test -f "$module_dir/$module"
-                echo "  [$index] $name [installed]"
+                set -a installed $module
             else
-                echo "  [$index] $name"
+                set -a uninstalled $module
             end
         end
 
-        echo
-        echo "  [i] Install module"
-        echo "  [r] Remove module"
-        echo "  [q] Quit"
-        echo
+        set -l max_name_width 0
 
-        read -P "Select: " choice
+        for module in $installed $uninstalled
+            set -l name (string replace '.fish' '' -- $module)
+            set -l length (string length -- "$name")
+
+            if test $length -gt $max_name_width
+                set max_name_width $length
+            end
+        end
+
+        set -l title " ── MODULES"
+        set -l content_width (math $max_name_width + 20)
+
+        if test $content_width -lt 38
+            set content_width 38
+        end
+
+        set -l title_length (string length -- "$title")
+
+        if test $title_length -gt $content_width
+            set content_width $title_length
+        end
+
+        set -l inner_width (math $content_width + 2)
+        set -l border (string repeat -n $inner_width "─")
+
+        printf "\n"
+
+        set_color $accent
+        printf "╭%s╮\n" "$border"
+
+        set_color $accent
+        printf "│  ── MODULES"
+        set -l title_padding (math $inner_width - 12)
+        if test $title_padding -gt 0
+            set_color $foreground
+            printf "%*s" $title_padding ""
+        end
+        set_color $accent
+        printf "│\n"
+
+        set_color $accent
+        printf "│"
+        set_color $foreground
+        printf "%*s" $inner_width ""
+        set_color $accent
+        printf "│\n"
+
+        set_color $accent
+        printf "│   ── INSTALLED"
+        set -l header_padding (math $inner_width - 15)
+        if test $header_padding -gt 0
+            set_color $foreground
+            printf "%*s" $header_padding ""
+        end
+        set_color $accent
+        printf "│\n"
+
+        if test (count $installed) -eq 0
+            set_color $accent
+            printf "│"
+            set_color $foreground
+            printf "   None installed"
+            set -l padding (math $inner_width - 17)
+            if test $padding -gt 0
+                printf "%*s" $padding ""
+            end
+            set_color $accent
+            printf "│\n"
+        else
+            set -l index 0
+
+            for module in $installed
+                set index (math $index + 1)
+
+                set -l name (string replace '.fish' '' -- $module)
+
+                set_color $accent
+                printf "│   ["
+                set_color $error_color
+                printf "%s" "$index"
+                set_color $accent
+                printf "]"
+                set_color $foreground
+                printf " %-*s" $max_name_width "$name"
+
+                set -l content_length (math 6 + (string length -- "$index") + $max_name_width)
+                set -l padding (math $inner_width - $content_length)
+                if test $padding -gt 0
+                    printf "%*s" $padding ""
+                end
+
+                set_color $accent
+                printf "│\n"
+            end
+        end
+
+        set_color $accent
+        printf "│"
+        set_color $foreground
+        printf "%*s" $inner_width ""
+        set_color $accent
+        printf "│\n"
+
+        set_color $accent
+        printf "│   ── AVAILABLE"
+        set -l header_padding (math $inner_width - 15)
+        if test $header_padding -gt 0
+            set_color $foreground
+            printf "%*s" $header_padding ""
+        end
+        set_color $accent
+        printf "│\n"
+
+        if test (count $uninstalled) -eq 0
+            set_color $accent
+            printf "│"
+            set_color $foreground
+            printf "   All modules installed"
+            set -l padding (math $inner_width - 24)
+            if test $padding -gt 0
+                printf "%*s" $padding ""
+            end
+            set_color $accent
+            printf "│\n"
+        else
+            set -l index (count $installed)
+
+            for module in $uninstalled
+                set index (math $index + 1)
+
+                set -l name (string replace '.fish' '' -- $module)
+
+                set_color $accent
+                printf "│   ["
+                set_color $error_color
+                printf "%s" "$index"
+                set_color $accent
+                printf "]"
+                set_color $foreground
+                printf " %-*s" $max_name_width "$name"
+
+                set -l content_length (math 6 + (string length -- "$index") + $max_name_width)
+                set -l padding (math $inner_width - $content_length)
+                if test $padding -gt 0
+                    printf "%*s" $padding ""
+                end
+
+                set_color $accent
+                printf "│\n"
+            end
+        end
+
+        set_color $accent
+        printf "│"
+        set_color $foreground
+        printf "%*s" $inner_width ""
+        set_color $accent
+        printf "│\n"
+
+        set_color $accent
+        printf "│ ["
+        set_color $error_color
+        printf i
+        set_color $accent
+        printf "]"
+        set_color $foreground
+        printf " Install module"
+        set -l padding (math $inner_width - 19)
+        if test $padding -gt 0
+            printf "%*s" $padding ""
+        end
+        set_color $accent
+        printf "│\n"
+
+        set_color $accent
+        printf "│ ["
+        set_color $error_color
+        printf r
+        set_color $accent
+        printf "]"
+        set_color $foreground
+        printf " Remove module"
+        set -l padding (math $inner_width - 18)
+        if test $padding -gt 0
+            printf "%*s" $padding ""
+        end
+        set_color $accent
+        printf "│\n"
+
+        set_color $accent
+        printf "│ ["
+        set_color $error_color
+        printf q
+        set_color $accent
+        printf "]"
+        set_color $foreground
+        printf " Quit"
+        set -l padding (math $inner_width - 9)
+        if test $padding -gt 0
+            printf "%*s" $padding ""
+        end
+        set_color $accent
+        printf "│\n"
+
+        set_color $accent
+        printf "╰%s╯\n" "$border"
+
+        set_color $foreground
+        read -P " Select: " choice
 
         switch $choice
             case q Q
                 break
 
             case i I
-                read -P "Module name: " name
+                printf "\n"
+                read -P " Module name: " name
 
                 if not string match -q "*.fish" -- $name
                     set name "$name.fish"
                 end
 
                 if not contains -- $name $available
-                    echo "Module does not exist."
+                    set_color $error_color
+                    echo " Module does not exist."
+                    set_color normal
+                    continue
+                end
+
+                if test -f "$module_dir/$name"
+                    set_color $error_color
+                    echo " Already installed: $name"
+                    set_color normal
                     continue
                 end
 
                 set -l url "https://raw.githubusercontent.com/$repo/main/modules/$name"
 
                 if curl -fsSL "$url" -o "$module_dir/$name"
-                    echo "Installed: $name"
+                    set_color $accent
+                    echo " Installed: $name"
+                    set_color normal
                 else
-                    echo "Failed to install: $name"
+                    set_color $error_color
+                    echo " Failed to download: $name"
+                    set_color normal
                     rm -f "$module_dir/$name"
                 end
 
             case r R
-                read -P "Module name: " name
+                printf "\n"
+                read -P " Module name: " name
 
                 if not string match -q "*.fish" -- $name
                     set name "$name.fish"
@@ -442,44 +720,22 @@ function !modules
 
                 if test -f "$module_dir/$name"
                     rm "$module_dir/$name"
-                    echo "Removed: $name"
+
+                    set_color $accent
+                    echo " Removed: $name"
+                    set_color normal
                 else
-                    echo "Module is not installed."
+                    set_color $error_color
+                    echo " Module is not installed."
+                    set_color normal
                 end
 
             case '*'
-                if string match -rq '^[0-9]+$' -- $choice
-                    set -l selected $available[$choice]
-
-                    if test -z "$selected"
-                        echo "Invalid selection."
-                        continue
-                    end
-
-                    if test -f "$module_dir/$selected"
-                        echo "$selected is already installed."
-                        continue
-                    end
-
-                    set -l url "https://raw.githubusercontent.com/$repo/main/modules/$selected"
-
-                    if curl -fsSL "$url" -o "$module_dir/$selected"
-                        echo "Installed: $selected"
-                    else
-                        echo "Failed to install: $selected"
-                        rm -f "$module_dir/$selected"
-                    end
-                else
-                    echo "Invalid selection."
-                end
+                set_color $error_color
+                echo " Invalid selection."
+                set_color normal
         end
     end
-end
-
-function !install
-    # description: Open the Fish module installer
-    # category: SYS
-    !modules
 end
 
 # ---------------------------------------------------------
@@ -820,6 +1076,10 @@ alias !vi='!vencord'
 
 alias !cfgs='!cfgsource'
 # description: Shortcut for !cfgsource
+# category: ALIASES
+
+alias !md="!modules"
+# description: Modules Shortcut
 # category: ALIASES
 
 # ---------------------------------------------------------
