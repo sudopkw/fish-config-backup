@@ -1068,7 +1068,7 @@ function !w
         set padding (math $inner_width - $content_length - 1)
 
         if string match -q "*🌤*" -- $content
-            set padding (math $padding - 1)
+            set padding (math $padding - 0)
         end
 
         test $padding -ge 0; or set padding 0
