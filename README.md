@@ -8,14 +8,7 @@ I'm aware the configuration file is ugly, Don't judge me, Please
 
 ## Required packages:
 ```
-curl
-jq
-tor
-torsocks
-fzf
-bat
-traceroute
-git
+Required packages will be prompted for install once you run a command that requires them. (Mostly for modules)
 ```
 
 ## Installation script:
