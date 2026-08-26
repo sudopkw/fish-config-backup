@@ -357,14 +357,14 @@ function !ucfg
     # category: SYS
 
     curl -fsSL \
-        https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/config.fish \
+        https://raw.githubusercontent.com/sudopkw/pkw-fishware/main/config.fish \
         -o ~/.config/fish/config.fish
 end
 
 function !cfgsource
     # description: Open config source
     # category: SYS
-    xdg-open "https://github.com/sudopkw/fish-config-backup"
+    xdg-open "https://github.com/sudopkw/pkw-fishware"
 end
 
 function !src
@@ -389,7 +389,7 @@ function !modules
     # description: Install, remove and manage Fish modules
     # category: SYS
 
-    set -l repo sudopkw/fish-config-backup
+    set -l repo sudopkw/pkw-fishware
     set -l api "https://api.github.com/repos/$repo/contents/modules"
     set -l module_dir ~/.config/fish/modules
     set -l theme ~/.local/state/omarchy/current/theme/colors.toml
@@ -814,7 +814,7 @@ function !log
     test -n "$accent"; or set accent normal
     test -n "$foreground"; or set foreground normal
 
-    set -l log_url "https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/update.log?$(date +%s)"
+    set -l log_url "https://raw.githubusercontent.com/sudopkw/pkw-fishware/main/update.log?$(date +%s)"
     set -l logs (curl -fsSL --max-time 5 "$log_url" 2>/dev/null)
 
     if test $status -ne 0 -o (count $logs) -eq 0

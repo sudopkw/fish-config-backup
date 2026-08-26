@@ -20,7 +20,7 @@ git
 
 ## Installation script:
 ```fish
-curl -fsSL https://raw.githubusercontent.com/sudopkw/fish-config-backup/main/config.fish \
+curl -fsSL https://raw.githubusercontent.com/sudopkw/pkw-fishware/main/config.fish \
   -o ~/.config/fish/config.fish
 ```
 
