@@ -34,9 +34,9 @@ function !tor
     __tor_check_deps; or return 1
     sudo systemctl start tor
     if test $status -eq 0
-        echo " ꪜ TOR Started! [ SOCKSPort:1337 ]"
+        echo " ꪜ  TOR Started! [ SOCKSPort:1337 ]"
     else
-        echo " ✘ Failed to start TOR!"
+        echo " ✘  Failed to start TOR!"
     end
 end
 
@@ -46,13 +46,9 @@ function !ktor
     __tor_check_deps; or return 1
     sudo systemctl stop tor
     if test $status -eq 0
-        set_color $accent
-        echo " ꪜ TOR Killed!"
-        set_color $normal
+        echo " ꪜ  TOR Killed!"
     else
-        set_color red
-        echo " ✘ The TOR Service never dies!"
-        set_color $normal
+        echo " ✘  The TOR Service never dies!"
     end
 end
 
@@ -61,7 +57,7 @@ function !rtor
     # category: TOR
     __tor_check_deps; or return 1
     sudo systemctl restart tor
-    echo "ꪜ TOR Restarted!"
+    echo " ꪜ  TOR Restarted!"
 end
 
 function !torstatus
