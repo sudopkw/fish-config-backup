@@ -2,7 +2,38 @@
 # GREETING
 # ---------------------------------------------------------
 
+function __core_check_deps
+    set -l core curl jq fzf bat
+    set -l missing
+
+    for cmd in $core
+        if not command -q $cmd
+            set -a missing $cmd
+        end
+    end
+
+    if test (count $missing) -eq 0
+        return 0
+    end
+
+    set_color $accent
+    echo "Missing core packages: "(string join ", " $missing)
+    set_color normal
+    read -P "Install them now with pacman? [y/N] " answer
+    if string match -qr '^[yY]' -- $answer
+        sudo pacman -S --needed --noconfirm $missing
+        or return 1
+    else
+        return 1
+    end
+    return 0
+end
+
 function fish_greeting
+
+    __core_check_deps
+    or return 1
+
     set -l theme ~/.local/state/omarchy/current/theme/colors.toml
     set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
     set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
@@ -674,31 +705,40 @@ jq -r '  .[] | select(.type == "file") | select(.name | endswith(".fish")) | .na
         switch $choice
             case q Q
                 break
-
             case i I
                 printf "\n"
-                read -P " Module name: " name
-
-                if not string match -q "*.fish" -- $name
-                    set name "$name.fish"
+                read -P " Module name or number: " input
+                set -l name ""
+                if string match -qr '^[0-9]+$' -- $input
+                    set -l all $installed $uninstalled
+                    set -l idx (math $input)
+                    if test $idx -ge 1 -a $idx -le (count $all)
+                        set name $all[$idx]
+                    else
+                        set_color $error_color
+                        echo " Invalid number."
+                        set_color normal
+                        continue
+                    end
+                else
+                    set name $input
+                    if not string match -q "*.fish" -- $name
+                        set name "$name.fish"
+                    end
                 end
-
                 if not contains -- $name $available
                     set_color $error_color
                     echo " Module does not exist."
                     set_color normal
                     continue
                 end
-
                 if test -f "$module_dir/$name"
                     set_color $error_color
                     echo " Already installed: $name"
                     set_color normal
                     continue
                 end
-
                 set -l url "https://raw.githubusercontent.com/$repo/main/modules/$name"
-
                 if curl -fsSL "$url" -o "$module_dir/$name"
                     set_color $accent
                     echo " Installed: $name"
@@ -709,18 +749,29 @@ jq -r '  .[] | select(.type == "file") | select(.name | endswith(".fish")) | .na
                     set_color normal
                     rm -f "$module_dir/$name"
                 end
-
             case r R
                 printf "\n"
-                read -P " Module name: " name
-
-                if not string match -q "*.fish" -- $name
-                    set name "$name.fish"
+                read -P " Module name or number: " input
+                set -l name ""
+                if string match -qr '^[0-9]+$' -- $input
+                    set -l all $installed $uninstalled
+                    set -l idx (math $input)
+                    if test $idx -ge 1 -a $idx -le (count $all)
+                        set name $all[$idx]
+                    else
+                        set_color $error_color
+                        echo " Invalid number."
+                        set_color normal
+                        continue
+                    end
+                else
+                    set name $input
+                    if not string match -q "*.fish" -- $name
+                        set name "$name.fish"
+                    end
                 end
-
                 if test -f "$module_dir/$name"
                     rm "$module_dir/$name"
-
                     set_color $accent
                     echo " Removed: $name"
                     set_color normal
@@ -888,7 +939,7 @@ function !w
             case 113
                 echo "☀"
             case 116
-                echo "⛅"
+                echo "🌤"
             case 119 122
                 echo "☁"
             case 143 248 260
@@ -898,7 +949,7 @@ function !w
             case 179 182 185 281 284 320 323 326 329 332 335 338 362 365 368 371 374 377
                 echo "❄"
             case 200 386 389 392 395
-                echo "⚡"
+                echo "⚡︎"
             case '*'
                 echo "?"
         end
@@ -1016,7 +1067,7 @@ function !w
         set -l content_length (string length -- $content)
         set padding (math $inner_width - $content_length - 1)
 
-        if string match -q "*⛅*" -- $content
+        if string match -q "*🌤*" -- $content
             set padding (math $padding - 1)
         end
 
@@ -1108,139 +1159,140 @@ end
 function !help
     # description: Show custom commands and descriptions
     # category: SYS
-
     set -l configs ~/.config/fish/config.fish ~/.config/fish/personal.fish
     set -l module_dir ~/.config/fish/modules
-
     if test -d $module_dir
         for module in $module_dir/*.fish
             test -f $module; and set -a configs $module
         end
     end
-
     set -l theme ~/.local/state/omarchy/current/theme/colors.toml
     set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
     set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
-
     test -n "$accent"; or set accent normal
     test -n "$foreground"; or set foreground normal
-
     set -l commands
-
     for config in $configs
         test -f $config; or continue
-
+        set -l is_module false
+        set -l module_name ""
+        if string match -q "$module_dir/*" -- $config
+            set is_module true
+            set module_name (path basename $config | string replace '.fish' '')
+        end
         set -l current_name ""
         set -l current_description ""
-
         while read -l line
             set -l match (string match -r '^function[[:space:]]+(![^[:space:]]+)' -- $line)
-
             if test (count $match) -eq 2
                 set current_name $match[2]
                 set current_description ""
                 continue
             end
-
             if test -n "$current_name"
                 set -l description_match \
                     (string match -r '^[[:space:]]*#[[:space:]]*description:[[:space:]]*(.+)$' -- $line)
-
                 if test (count $description_match) -eq 2
                     set current_description $description_match[2]
                     continue
                 end
             end
-
             set -l alias_match \
                 (string match -r '^[[:space:]]*alias[[:space:]]+(!?[^=[:space:]]+)=' -- $line)
-
             if test (count $alias_match) -eq 2
                 set current_name $alias_match[2]
                 set current_description alias
                 continue
             end
-
             if test -n "$current_name"
                 set -l category_match \
                     (string match -r '^[[:space:]]*#[[:space:]]*category:[[:space:]]*(.+)$' -- $line)
-
                 if test (count $category_match) -eq 2
                     if test -n "$current_description"
-                        set -a commands \
-                            "$category_match[2]|$current_name|$current_description"
+                        set -l cat $category_match[2]
+                        if test $is_module = true
+                            set cat "MODULES/$module_name"
+                        end
+                        set -a commands "$cat|$current_name|$current_description"
                     end
-
                     set current_name ""
                     set current_description ""
                 end
             end
         end <$config
     end
-
     if test (count $commands) -eq 0
         echo "No custom commands found."
         return
     end
-
     set -l name_width 18
     set -l desc_width 20
-
     for command in $commands
         set -l parts (string split "|" -- $command)
-
         set -l name_len (string length -- $parts[2])
         set -l desc_len (string length -- $parts[3])
-
         test $name_len -le $name_width; or set name_width $name_len
         test $desc_len -le $desc_width; or set desc_width $desc_len
     end
-
+    # Build hierarchical rows
     set -l rows
-    set -l categories
-
+    set -l top_categories
+    set -l seen_subcats
     for command in $commands
         set -l parts (string split "|" -- $command)
-        set -l category $parts[1]
+        set -l full_cat $parts[1]
         set -l name $parts[2]
         set -l description $parts[3]
-
-        if not contains -- $category $categories
-            set -a categories $category
-
-            if test (count $categories) -gt 1
-                set -a rows ""
+        if string match -q "MODULES/*" -- $full_cat
+            set -l sub (string replace "MODULES/" "" -- $full_cat)
+            if not contains -- MODULES $top_categories
+                set -a top_categories MODULES
+                if test (count $top_categories) -gt 1
+                    set -a rows ""
+                end
+                set -a rows "CATEGORY|MODULES"
             end
-
-            set -a rows "CATEGORY|$category"
+            set -l subkey "MODULES/$sub"
+            if not contains -- $subkey $seen_subcats
+                set -a seen_subcats $subkey
+                set -a rows "SUBCATEGORY|$sub"
+            end
+            set -a rows (printf "    %-*s   %-*s " \
+                $name_width "$name" \
+                $desc_width "$description")
+        else
+            if not contains -- $full_cat $top_categories
+                set -a top_categories $full_cat
+                if test (count $top_categories) -gt 1
+                    set -a rows ""
+                end
+                set -a rows "CATEGORY|$full_cat"
+            end
+            set -a rows (printf "  %-*s   %-*s " \
+                $name_width "$name" \
+                $desc_width "$description")
         end
-
-        set -a rows (printf "  %-*s   %-*s " \
-            $name_width "$name" \
-            $desc_width "$description")
     end
-
     set -l width 0
-
     for row in $rows
         if string match -q "CATEGORY|*" -- $row
             set -l category (string replace "CATEGORY|" "" -- $row)
             set -l length (string length -- "  ── $category")
-
+            test $length -le $width; or set width $length
+        else if string match -q "SUBCATEGORY|*" -- $row
+            set -l sub (string replace "SUBCATEGORY|" "" -- $row)
+            set -l length (string length -- "    ── $sub")
             test $length -le $width; or set width $length
         else
             set -l length (string length -- $row)
             test $length -le $width; or set width $length
         end
     end
-
     set width (math $width + 2)
     set -l border (string repeat -n $width "─")
-
     printf "\n"
     set_color $accent
     printf "╭%s╮\n" "$border"
-
     for row in $rows
         if test -z "$row"
             printf "│"
@@ -1250,31 +1302,38 @@ function !help
             printf "│\n"
             continue
         end
-
         if string match -q "CATEGORY|*" -- $row
             set -l category (string replace "CATEGORY|" "" -- $row)
             set -l header "  ── $category"
             set -l length (string length -- $header)
             set -l padding (math $width - $length - 1)
-
             set_color $accent
             printf "│ %s" "$header"
-
             if test $padding -gt 0
                 set_color $foreground
                 printf "%*s" $padding ""
             end
-
+            set_color $accent
+            printf "│\n"
+        else if string match -q "SUBCATEGORY|*" -- $row
+            set -l sub (string replace "SUBCATEGORY|" "" -- $row)
+            set -l header "    ── $sub"
+            set -l length (string length -- $header)
+            set -l padding (math $width - $length - 1)
+            set_color $accent
+            printf "│ %s" "$header"
+            if test $padding -gt 0
+                set_color $foreground
+                printf "%*s" $padding ""
+            end
             set_color $accent
             printf "│\n"
         else
             set -l length (string length -- $row)
             set -l padding (math $width - $length)
-
             if test $padding -gt 0
                 set row "$row"(string repeat -n $padding " ")
             end
-
             set_color $accent
             printf "│"
             set_color $foreground
@@ -1283,7 +1342,6 @@ function !help
             printf "│\n"
         end
     end
-
     printf "╰%s╯\n" "$border"
     set_color normal
     printf "\n"

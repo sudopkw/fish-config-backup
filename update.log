@@ -32,3 +32,5 @@
    You can directly install/remove modules trough the !modules command.
    More modules will hopefully come soon if i'm not lazy
  + Added '!md' alias for accessing !modules easier
+ + Added checks for needed packages - If you do not have them installed,
+ You will be prompted with a install
