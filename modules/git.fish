@@ -3,11 +3,14 @@
 # ---------------------------------------------------------
 
 function __git_check_deps
+    set -l theme ~/.local/state/omarchy/current/theme/colors.toml
+    set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+    test -n "$accent"; or set accent normal
     if not command -q git
         set_color $accent
-        echo "Missing package: git"
+        echo " 🛈: Missing package: git"
         set_color normal
-        read -P "Install it now with pacman? [y/N] " answer
+        read -P " ➜ Install it now with pacman? [y/N] " answer
         if string match -qr '^[yY]' -- $answer
             sudo pacman -S --needed --noconfirm git
             or return 1

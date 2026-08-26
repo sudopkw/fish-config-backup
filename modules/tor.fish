@@ -3,6 +3,9 @@
 # ---------------------------------------------------------
 
 function __tor_check_deps
+    set -l theme ~/.local/state/omarchy/current/theme/colors.toml
+    set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+    test -n "$accent"; or set accent normal
     set -l missing
     for cmd in tor torsocks curl
         if not command -q $cmd
@@ -13,9 +16,9 @@ function __tor_check_deps
         return 0
     end
     set_color $accent
-    echo "Missing packages: "(string join ", " $missing)
+    echo " 🛈  Missing packages: "(string join ", " $missing)
     set_color normal
-    read -P "Install them now with pacman? [y/N] " answer
+    read -P " ➜ Install them now with pacman? [y/N] " answer
     if string match -qr '^[yY]' -- $answer
         sudo pacman -S --needed --noconfirm $missing
         or return 1
