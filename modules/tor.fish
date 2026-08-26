@@ -7,9 +7,9 @@ function !tor
     # category: TOR
     sudo systemctl start tor
     if test $status -eq 0
-        echo "✔️ TOR Started! [ SOCKSPort:1337 ]"
+        echo "ꪜ TOR Started! [ SOCKSPort:1337 ]"
     else
-        echo "❌ Failed to start TOR!"
+        echo "✘ Failed to start TOR!"
     end
 end
 
@@ -18,9 +18,9 @@ function !ktor
     # category: TOR
     sudo systemctl stop tor
     if test $status -eq 0
-        echo "✔️ TOR Killed!"
+        echo "ꪜ TOR Killed!"
     else
-        echo "❌ The TOR Service never dies!"
+        echo "✘ The TOR Service never dies!"
     end
 end
 
@@ -28,7 +28,7 @@ function !rtor
     # description: Restarts TOR Service
     # category: TOR
     sudo systemctl restart tor
-    echo "✔️ TOR Restarted!"
+    echo "ꪜ TOR Restarted!"
 end
 
 function !torstatus
