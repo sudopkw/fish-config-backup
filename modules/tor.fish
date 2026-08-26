@@ -16,9 +16,7 @@ function __tor_check_deps
         return 0
     end
     set_color $accent
-    printf " 🛈  Missing packages: "
-    set_color $error_color
-    printf"%s" (string join ", " $missing)
+    echo " 🛈  Missing packages: "(string join ", " $missing)
     set_color normal
     read -P " ➜ Install them now with pacman? [y/N] " answer
     if string match -qr '^[yY]' -- $answer
