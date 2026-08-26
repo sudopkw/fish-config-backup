@@ -59,6 +59,18 @@ function !gp
     git push
 end
 
+function !gundo
+    # description: Undo git changes
+    # category: GIT
+    __git_check_deps; or return 1
+    git reset --soft HEAD-1
+end
+
+function !glog
+    __git_check_deps; or return 1
+    git log --oneline --decorate --graph --all
+end
+
 function !gd
     # description: Show Git changes
     # category: GIT
