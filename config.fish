@@ -41,7 +41,7 @@ function fish_greeting
     test -n "$accent"; or set accent normal
     test -n "$foreground"; or set foreground normal
 
-    set -l cache_dir ~/.cache/pkw
+    set -l cache_dir ~/.cache/fishware
     set -l cache_age 1800
     mkdir -p $cache_dir
 
@@ -378,10 +378,10 @@ function !src
 end
 
 function !cc
-    # description: Clear PKW cache
+    # description: Clear INFO cache
     # category: SYS
 
-    rm -rf ~/.cache/pkw
+    rm -rf ~/.cache/fishware
     echo "Cache cleared."
 end
 
