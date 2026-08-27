@@ -1,19 +1,3 @@
- ── 10th of August 2026
- + Added Change log!
- + You can now use '-y' at the end of a install/delete command in order to automatically agree to the Y/N prompt.
- ➜ Use example: yay -S packagename -y | yay -Rns packagename -y
- + Added !cfgsource along with it's !cfgs alias!
- + Optimized the conifg making it boot faster, it now caches your info, weather, tor, and vpn request for 30 min.
- + Fixed the '!ip' command
- - Removed '!wlegacy' command
- + minor bug fixes with caches
-
- ── 12th of August 2026
- + Cache timer added into the info box
-
- ── 15th of August 2026
- - Removed '!trace' command as it was broken
-
  ── 16th of August 2026
  + added personal.fish configs, now you can add your own commands and they will not get re-written if you update.
  + DEV LOG: Now updating trough git
@@ -34,3 +18,13 @@
  + Added '!md' alias for accessing !modules easier
  + Added checks for needed packages - If you do not have them installed,
  You will be prompted with a install
+
+ ── 27th of August 2026
+ + Added the LINKS Module! 
+ + You can now install the LINKS module and do things like:
+  > Shorten URLs 
+  > Generate passwords
+  > Manage your shortened URLs
+  > checks if a URL is valid (any)
+ 
+
