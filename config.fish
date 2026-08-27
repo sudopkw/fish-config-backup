@@ -164,6 +164,10 @@ function fish_greeting
         "Welcome, $USER!" \
         "Hello again, $USER!" \
         "Logged in as: $USER" \
+        "THATS UBER BASED, $USER!" \
+        "Thank you for using fishware, $USER!" \
+        "$USER UBER ALLES!" \
+        "$USER? Is that you?" \
         "1337 4 3/3|2, $USER!" \
         "No way! Is that $USER??!!11!!11!!" \
         "Remember to update your config, $USER!" \
