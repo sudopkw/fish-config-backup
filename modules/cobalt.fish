@@ -1,15 +1,18 @@
 function !cobalt
-    # description: Self-hosted FOSS media downloader and API for downloading media
-    # category: LINKS
     set -l cobalt_dir "$HOME/.local/share/cobalt"
     set -l compose "$cobalt_dir/docker-compose.yml"
-    set -l tmpdir /tmp/cobalt-output
+    set -l tmpdir "$HOME/.cache/cobalt"
 
     function __cobalt_box
-        set -l theme ~/.local/state/omarchy/current/theme/colors.toml
-        set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
-        set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+        set -l theme "$HOME/.local/state/omarchy/current/theme/colors.toml"
+        set -l accent
+        set -l foreground
         set -l error_color red
+
+        if test -f "$theme"
+            set accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < "$theme")[2]
+            set foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < "$theme")[2]
+        end
 
         if test -z "$accent"
             set accent normal
@@ -26,7 +29,6 @@ function !cobalt
 
         for msg in $argv
             set -l length (string length -- "$msg")
-
             if test $length -gt $max_length
                 set max_length $length
             end
@@ -43,7 +45,7 @@ function !cobalt
         end
 
         set -l content_width $max_length
-        set -l inner_width (math $content_width + 2)
+        set -l inner_width (math "$content_width + 2")
         set -l border (string repeat -n $inner_width "─")
 
         printf "\n"
@@ -54,7 +56,7 @@ function !cobalt
         set_color $accent
         printf "│   ── %s" "$title"
 
-        set -l title_padding (math $inner_width - (string length -- "$title") - 6)
+        set -l title_padding (math "$inner_width - $title_length - 6")
 
         if test $title_padding -gt 0
             set_color $foreground
@@ -75,9 +77,9 @@ function !cobalt
             set_color $accent
             printf "│ "
 
-            if string match -q 'http://*' "$msg"
+            if string match -q 'http://*' -- "$msg"
                 set_color $error_color
-            else if string match -q 'https://*' "$msg"
+            else if string match -q 'https://*' -- "$msg"
                 set_color $error_color
             else
                 set_color $foreground
@@ -100,18 +102,32 @@ function !cobalt
         set -l title "$argv[1]"
         set -e argv[1]
 
-        mkdir -p "$tmpdir"
-        set -l output "$tmpdir/output"
+        set -l output_dir "$HOME/.cache/cobalt"
+
+        mkdir -p "$output_dir"
+
+        if test $status -ne 0
+            __cobalt_box ERROR \
+                "Could not create temporary output directory." \
+                "$output_dir"
+            return 1
+        end
+
+        set -l output "$output_dir/output"
+
+        rm -f "$output"
 
         command $argv >"$output" 2>&1
         set -l result $status
 
         set -l lines
 
-        if test -s "$output"
-            while read -l line
-                set -a lines "$line"
-            end <"$output"
+        if test -f "$output"
+            if test -s "$output"
+                while read -l line
+                    set -a lines "$line"
+                end <"$output"
+            end
         end
 
         rm -f "$output"
@@ -262,6 +278,7 @@ function !cobalt
         end
 
         rm -rf "$cobalt_dir"
+        rm -rf "$tmpdir"
 
         __cobalt_ok "Cobalt has been completely removed."
         return
