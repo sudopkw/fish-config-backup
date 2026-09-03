@@ -1,10 +1,6 @@
 ## NOTE: This config is mainly for OMARCHY. ( EW OMARCHY!!!!! HOW COULD YOU USE THIZ!! BLOAT!!!!!!!!!!!!!!!!! )
 It is possible for you to use it on other systems, but you might have to get your hands dirty and rewrite some of it / remove some things
 
-# fish-config-backup
-
-Just a back-up of my config for the fish shell
-I'm aware the configuration file is ugly, Don't judge me, Please
 
 ## Required packages:
 ```
