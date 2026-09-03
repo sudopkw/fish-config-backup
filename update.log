@@ -1,11 +1,3 @@
- ── 16th of August 2026
- + added personal.fish configs, now you can add your own commands and they will not get re-written if you update.
- + DEV LOG: Now updating trough git
- + added fish sourcing as a command for accessibility
- + added '!ga' command
- + fixed colors for Omarchy Quattro
- + updated emoji list 
-
  ── 25th of August 2026
  + Fixed personal.fish commands not showing up in !help.
  + Added personal.fish info -- true/false
