@@ -1,5 +1,5 @@
 function !cobalt
-    # description: Cobalt is a FOSS Self-Hosted link downloader. (Mostly for downloading Youtube links)
+    # description: Cobalt is a FOSS Self-Hosted link downloader. \n (Mostly for downloading Youtube links) \n Use !cobalt help for commands!
     # category: LINKS
     set -l cobalt_dir "$HOME/.local/share/cobalt"
     set -l compose "$cobalt_dir/docker-compose.yml"
