@@ -26,5 +26,14 @@
   > Generate passwords
   > Manage your shortened URLs
   > checks if a URL is valid (any)
- 
-
+ ── 4th of September 2026
+ + Added Cobalt!
+  > Cobalt is a Open-Source Self-Hosted media downloader.
+  > You can use it to download videos or music
+  > List of supported wbesites: https://pkw.arch-linux.fun/p/k9pba6rfeu
+  > (if you don't feel like going to the website, yes youtube is supported)
+  > (soundcloud too, and even instagram and tiktok)
+  > Cobalt is completely hosted on YOUR machine, Though, the set-up process has been automated.
+  > You're welcome!
+  > Note:
+  > Run ' !cobalt help ' for a list of cobalt specific commands.
