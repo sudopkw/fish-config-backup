@@ -25,6 +25,7 @@ function !url
     set -l api "https://s.sudopkw.dev/api/v1/links"
     set -l verbose false
     set -l target ""
+    set -l slug ""
     set -l password ""
     set -l expiry ""
     set -l unsafe false
@@ -40,6 +41,14 @@ function !url
         switch $arg
             case -v --verbose
                 set verbose true
+
+            case -s --slug
+                set i (math $i + 1)
+                if test $i -gt (count $argv)
+                    echo "ERROR: Slug requires a value."
+                    return 1
+                end
+                set slug "$argv[$i]"
 
             case -p --password
                 set i (math $i + 1)
@@ -104,6 +113,7 @@ function !url
         echo
         echo "Options:"
         echo "  -v, --verbose             Detailed output"
+        echo "  -s, --slug <value>        Custom slug"
         echo "  -p, --password <value>    Password-protect link"
         echo "  -e, --expiry <duration>   Expiry: 20m, 5h, 1d"
         echo "      --unsafe              Mark link as unsafe"
@@ -162,6 +172,7 @@ function !url
 
     set -l json (jq -cn \
         --arg url "$target" \
+        --arg slug "$slug" \
         --arg password "$password" \
         --arg title "$title" \
         --arg description "$description" \
@@ -171,6 +182,7 @@ function !url
         --argjson expiration (test -n "$expiration_ms"; and echo "$expiration_ms"; or echo null) \
         '{
             url: $url,
+            slug: (if $slug == "" then null else $slug end),
             password: (if $password == "" then null else $password end),
             title: (if $title == "" then null else $title end),
             description: (if $description == "" then null else $description end),
@@ -223,6 +235,7 @@ function !url
     set -a rows "  SOURCE   $target"
     set -a rows "  SHORT    $short_url"
 
+    test -n "$slug"; and set -a rows "  SLUG     $slug"
     test -n "$title"; and set -a rows "  TITLE    $title"
     test -n "$description"; and set -a rows "  DESC     $description"
     test -n "$comment"; and set -a rows "  COMMENT  $comment"
