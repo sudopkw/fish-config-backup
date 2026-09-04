@@ -3,24 +3,29 @@
 
 
 ## Required packages:
+
 ```
 Required packages will be prompted for install once you run a command that requires them. (Mostly for modules)
 ```
 
 ## Installation script:
+
 ```fish
 curl -fsSL https://raw.githubusercontent.com/sudopkw/pkw-fishware/main/config.fish \
   -o ~/.config/fish/config.fish
 ```
 ## Quick information:
+
 ```
 > The accent color (color of the boxes, etc.) changes with your Omarchy theme
 > Modules are separate, installed with the !modules command
 > They will not be forcefully installed onto your system if you don't plan to use them
 > The current configuration is for Omarchy Quattro!
 > This configuration is still work in progress
+> The screenshots of the config at the bottom of the page may be outdated
 ```
 # HOW 2 MY CUSTOM FUNCTIONZ!!!!!!!!!!!!
+
 ```
 ## step 1: create a personal.fish file
 This will make sure that your own commands do not get re-written once you update.
@@ -29,17 +34,20 @@ inside the personal.fish file, follow the steps for making your own custom comma
 
 ```
 ## Make sure your custom function starts with ' ! ', it is the default prefix!
+
 ```
 if you wish to change it, You very much can! 
 if you decide to ignore this, Your own custom added functions will NOT show up in the !help TUI.
 ```
 ### After creating your desired function:
+
 ```fish
 function !example
   echo "Hello World!"
 end
 ```
 you may want to add a description and/or a category, How do we do this? Check it out below:
+
 ### Adding a description:
 
 Make sure the description tag is right below the function, Else it may not work (Maybe it will, i haven't actually tested this)
@@ -47,7 +55,9 @@ Make sure the description tag is right below the function, Else it may not work 
 ```
 However, it's straightforward and all you need is a ' # description: <Description> ' tag.
 ```
+
 - Here's an example of how it should look like inside of your configuration file:
+  
 ```fish
 function !example
  # description: This is a description!
@@ -56,10 +66,12 @@ end
 ```
 
 ### Adding a category:
+
 ```
 Adding a category is just as easy as adding descriptions, Simply add a ' # category: <CategoryName> ' tag.
 ```
 Here is an example of how it should look like inside of your configuration file with both a description, and a category:
+
 ```fish
 function !example
  # description: This is a description!
@@ -68,17 +80,23 @@ function !example
 end
 ```
 Yes, Spaces do indeed work in categories. I just personally wouldn't use them, but it's completely up to you what you do with your system.
+
 ## NOTE: When adding custom commands, you most likely won't be able to categorize them in for example SYS. 
+
 Instead, Just add a tag like `# personal`. It will make it look cleaner, and this way you can actually have it clear of other commands and inside of the '!help' function.
 In fact, I've done this too for some commands that i do not wish to update to the main config as it would reguire you guys to install a bunch of other stuff you don't need.
+
 # HOW 2 USE TOR COMMAND 4 NEWBIES!!11!1!!!
+
 ```
 After installing tor, Run the !tor command.
 You should then connect to tor.
 (To Check, You can use the command !torcheck, No output = Not connected.)
 (Alternatively, you can use the command !torstat for additional information)
 ```
+
 ## Install a proxy browser extension, I use FoxyProxy
+
 ```
 1. Create a new proxy and use these settings:
  Hostname: 127.0.0.1 (local)
