@@ -104,8 +104,8 @@ You should then connect to tor.
  type: SOCKS5
 2. Turn the proxy on
 3. Visit a .onion site, and assuming you've done everything correctly
-## Assuming everything is done correctly, You are now successfully connected to TOR!
 ```
+## Assuming everything is done correctly, You are now successfully connected to TOR!
 
 ### NOTE: I would not recommend using this to connect to .onion sites, as simply using the TOR browser is safer. However, It's good enough as a system-wide VPN alternative (assuming i actually did it correctly lol)
 
