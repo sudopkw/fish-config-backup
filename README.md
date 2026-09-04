@@ -1,5 +1,5 @@
 ## NOTE: This config is mainly for OMARCHY. ( EW OMARCHY!!!!! HOW COULD YOU USE THIZ!! BLOAT!!!!!!!!!!!!!!!!! )
-It is possible for you to use it on other systems, but you might have to get your hands dirty and rewrite some of it / remove some things
+It is possible for you to use it on other systems, but you might have to get your hands dirty and rewrite some of it / remove or replace some things
 
 
 ## Required packages:
@@ -12,6 +12,12 @@ Required packages will be prompted for install once you run a command that requi
 curl -fsSL https://raw.githubusercontent.com/sudopkw/pkw-fishware/main/config.fish \
   -o ~/.config/fish/config.fish
 ```
+## Quick information:
+> The accent color (color of the boxes, etc.) changes with your Omarchy theme
+> Modules are separate, installed with the !modules command
+> They will not be forcefully installed onto your system if you don't plan to use them
+> The current configuration is for Omarchy Quattro!
+> This configuration is still work in progress
 
 # HOW 2 MY CUSTOM FUNCTIONZ!!!!!!!!!!!!
 ```
