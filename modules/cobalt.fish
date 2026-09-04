@@ -1,5 +1,5 @@
 function !cobalt
-    # description: Self-Hosted FOSS media downloader.
+    # description: Self-Hosted FOSS media downloader
     # category: LINKS
     set -l cobalt_dir "$HOME/.local/share/cobalt"
     set -l compose "$cobalt_dir/docker-compose.yml"

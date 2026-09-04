@@ -1,3 +1,7 @@
+# ---------------------------------------------------------
+# LINKS
+# ---------------------------------------------------------
+
 source ~/.config/fish/personal.fish
 
 function !pwd
@@ -6,23 +10,474 @@ function !pwd
     openssl rand -hex 16
 end
 
-function !urldash
-    # description: Open the Syano dashboard
-    # category: LINKS
-
-    if not command -q xdg-open
-        echo "ERROR: xdg-open is not installed."
-        return 1
-    end
-
-    xdg-open "https://s.sudopkw.dev/dashboard" >/dev/null 2>&1 &
-end
-
 function !url
     # description: Shorten a URL using Syano
     # category: LINKS
 
     set -l api "https://s.sudopkw.dev/api/v1/links"
+    set -l theme ~/.local/state/omarchy/current/theme/colors.toml
+    set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+    set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
+
+    if test -z "$accent"
+        set accent normal
+    end
+
+    if test -z "$foreground"
+        set foreground normal
+    end
+
+    set -l error_color red
+
+    function __url_box --inherit-variable accent --inherit-variable foreground
+        set -l title "$argv[1]"
+        set -e argv[1]
+
+        set -l rows $argv
+        set -l max_length 0
+
+        for row in $rows
+            set -l length (string length -- "$row")
+            if test $length -gt $max_length
+                set max_length $length
+            end
+        end
+
+        set -l title_length (string length -- "$title")
+
+        if test $title_length -gt $max_length
+            set max_length $title_length
+        end
+
+        if test $max_length -lt 38
+            set max_length 38
+        end
+
+        set -l width $max_length
+        set -l inner_width (math "$width + 2")
+        set -l border (string repeat -n $inner_width "─")
+
+        printf "\n"
+
+        set_color $accent
+        printf "╭%s╮\n" "$border"
+
+        set_color $accent
+        printf "│   ── %s" "$title"
+
+        set -l padding (math "$inner_width - $title_length - 6")
+
+        if test $padding -gt 0
+            set_color $foreground
+            printf "%*s" $padding ""
+        end
+
+        set_color $accent
+        printf "│\n"
+
+        set_color $accent
+        printf "│"
+        set_color $foreground
+        printf "%*s" $inner_width ""
+        set_color $accent
+        printf "│\n"
+
+        for row in $rows
+            set_color $accent
+            printf "│ "
+
+            set_color $foreground
+            printf "%-*s" $width "$row"
+
+            set_color $accent
+            printf " │\n"
+        end
+
+        set_color $accent
+        printf "╰%s╯\n" "$border"
+
+        set_color normal
+        printf "\n"
+    end
+
+    function __url_error
+        __url_box ERROR $argv
+    end
+
+    function __url_help
+        __url_box "URL COMMANDS" \
+            "!url <url>                         Shorten a URL" \
+            "!url dash                          Open dashboard" \
+            "!url check <slug>                  Check a short URL" \
+            "!url info <slug>                   Show URL information" \
+            "!url stats <slug> [start] [end]    Show analytics" \
+            "!url list [options]                List shortened URLs" \
+            "!url find <query>                  Search shortened URLs" \
+            "!url rm <slug>                     Delete shortened URL" \
+            "!url valid <url>                    Check URL reachability"
+    end
+
+    set -l subcommand "$argv[1]"
+
+    switch "$subcommand"
+        case help --help
+            __url_help
+            return 0
+
+        case dash dashboard
+            if not command -q xdg-open
+                __url_error "xdg-open is not installed."
+                return 1
+            end
+
+            xdg-open "https://s.sudopkw.dev/dashboard" >/dev/null 2>&1 &
+            __url_box "URL DASHBOARD" \
+                "Opening Syano dashboard..." \
+                "https://s.sudopkw.dev/dashboard"
+            return 0
+
+        case check
+            if test (count $argv) -ne 2
+                __url_error "Usage: !url check <slug>"
+                return 1
+            end
+
+            if not set -q URL_API_KEY
+                __url_error "URL_API_KEY is not set."
+                return 1
+            end
+
+            set -l slug $argv[2]
+
+            set -l response (curl -fsS \
+                -H "X-API-Key: $URL_API_KEY" \
+                "$api/$slug" 2>/dev/null)
+
+            if test $status -ne 0
+                __url_error "Link not found or request failed."
+                return 1
+            end
+
+            set -l url (echo "$response" | jq -r '.data.url // empty')
+            set -l short (echo "$response" | jq -r '.data.short_url // empty')
+
+            if test -z "$url"
+                __url_error "Link not found."
+                return 1
+            end
+
+            __url_box "URL CHECK" \
+                "SHORT    $short" \
+                "TARGET   $url"
+
+            return 0
+
+        case info
+            if test (count $argv) -ne 2
+                __url_error "Usage: !url info <slug>"
+                return 1
+            end
+
+            if not set -q URL_API_KEY
+                __url_error "URL_API_KEY is not set."
+                return 1
+            end
+
+            set -l response (curl -fsS \
+                -H "X-API-Key: $URL_API_KEY" \
+                "$api/$argv[2]" 2>/dev/null)
+
+            if test $status -ne 0
+                __url_error "Failed to fetch link."
+                return 1
+            end
+
+            set -l data (echo "$response" | jq -r '
+                .data |
+                "SLUG        \(.slug)",
+                "URL         \(.url)",
+                "SHORT       \(.short_url)",
+                "TITLE       \(.title // "-")",
+                "DESCRIPTION \(.description // "-")",
+                "COMMENT     \(.comment // "-")",
+                "EXPIRATION  \(.expiration // "never")",
+                "CLOAKING    \(.cloaking)",
+                "QUERY       \(.redirect_with_query)",
+                "CREATED     \(.created_at)",
+                "UPDATED     \(.updated_at)"
+            ')
+
+            __url_box "URL INFORMATION" $data
+            return 0
+
+        case stats
+            if test (count $argv) -lt 2; or test (count $argv) -gt 4
+                __url_error "Usage: !url stats <slug> [start_date] [end_date]"
+                return 1
+            end
+
+            if not set -q URL_API_KEY
+                __url_error "URL_API_KEY is not set."
+                return 1
+            end
+
+            set -l endpoint "https://s.sudopkw.dev/api/v1/analytics/$argv[2]"
+
+            if test (count $argv) -ge 3
+                set endpoint "$endpoint?start_date="(string escape --style=url "$argv[3]")
+            end
+
+            if test (count $argv) -eq 4
+                set endpoint "$endpoint&end_date="(string escape --style=url "$argv[4]")
+            end
+
+            set -l response (curl -fsS \
+                -H "X-API-Key: $URL_API_KEY" \
+                "$endpoint" 2>/dev/null)
+
+            if test $status -ne 0
+                __url_error "Failed to fetch analytics."
+                return 1
+            end
+
+            set -l rows
+
+            set -a rows "LINK          "(echo "$response" | jq -r '.data.link.short_url // .data.link.slug')
+            set -a rows ""
+            set -a rows "TOTAL CLICKS  "(echo "$response" | jq -r '.data.summary.total_clicks')
+            set -a rows ""
+            set -a rows "BY DATE"
+
+            for row in (echo "$response" | jq -r '.data.clicks_by_date[] | "  \(.date): \(.clicks)"')
+                set -a rows "$row"
+            end
+
+            set -a rows ""
+            set -a rows "BY COUNTRY"
+
+            for row in (echo "$response" | jq -r '.data.clicks_by_country[] | "  \(.country // "Unknown"): \(.clicks)"')
+                set -a rows "$row"
+            end
+
+            set -a rows ""
+            set -a rows "BY DEVICE"
+
+            for row in (echo "$response" | jq -r '.data.clicks_by_device[] | "  \(.device // "Unknown"): \(.clicks)"')
+                set -a rows "$row"
+            end
+
+            set -a rows ""
+            set -a rows "BY BROWSER"
+
+            for row in (echo "$response" | jq -r '.data.clicks_by_browser[] | "  \(.browser // "Unknown"): \(.clicks)"')
+                set -a rows "$row"
+            end
+
+            __url_box "URL ANALYTICS" $rows
+            return 0
+
+        case list
+            if not set -q URL_API_KEY
+                __url_error "URL_API_KEY is not set."
+                return 1
+            end
+
+            set -l limit 50
+            set -l search ""
+
+            set -l i 2
+
+            while test $i -le (count $argv)
+                switch $argv[$i]
+                    case -n --limit
+                        set i (math $i + 1)
+
+                        if test $i -gt (count $argv)
+                            __url_error "Limit requires a value."
+                            return 1
+                        end
+
+                        set limit $argv[$i]
+
+                    case -s --search
+                        set i (math $i + 1)
+
+                        if test $i -gt (count $argv)
+                            __url_error "Search requires a value."
+                            return 1
+                        end
+
+                        set search $argv[$i]
+
+                    case "*"
+                        __url_error \
+                            "Usage: !url list [-n|--limit <number>] [-s|--search <query>]"
+                        return 1
+                end
+
+                set i (math $i + 1)
+            end
+
+            set -l endpoint "$api?limit=$limit"
+
+            if test -n "$search"
+                set endpoint "$endpoint&search="(string escape --style=url "$search")
+            end
+
+            set -l response (curl -fsS \
+                -H "X-API-Key: $URL_API_KEY" \
+                "$endpoint" 2>/dev/null)
+
+            if test $status -ne 0
+                __url_error "Failed to fetch links."
+                return 1
+            end
+
+            set -l rows
+
+            for row in (echo "$response" | jq -r '
+                .data[] |
+                "\(.slug)    \(.short_url)    \(.click_count) clicks"
+            ')
+                set -a rows "$row"
+            end
+
+            if test (count $rows) -eq 0
+                set -a rows "No shortened URLs found."
+            end
+
+            __url_box "SHORTENED URLS" $rows
+            return 0
+
+        case find
+            if test (count $argv) -lt 2
+                __url_error "Usage: !url find <query>"
+                return 1
+            end
+
+            if not set -q URL_API_KEY
+                __url_error "URL_API_KEY is not set."
+                return 1
+            end
+
+            set -l query (string join " " -- $argv[2..-1])
+            set -l encoded (string escape --style=url "$query")
+
+            set -l response (curl -fsS \
+                -H "X-API-Key: $URL_API_KEY" \
+                "https://s.sudopkw.dev/api/v1/links/search?q=$encoded&limit=50" 2>/dev/null)
+
+            if test $status -ne 0
+                __url_error "Search failed."
+                return 1
+            end
+
+            set -l rows
+
+            for row in (echo "$response" | jq -r '
+                .data[] |
+                "\(.slug)    \(.url)"
+            ')
+                set -a rows "$row"
+            end
+
+            if test (count $rows) -eq 0
+                set -a rows "No matching URLs found."
+            end
+
+            __url_box "URL SEARCH" \
+                "QUERY  $query" \
+                "" \
+                $rows
+
+            return 0
+
+        case rm remove delete
+            if test (count $argv) -ne 2
+                __url_error "Usage: !url rm <slug>"
+                return 1
+            end
+
+            if not set -q URL_API_KEY
+                __url_error "URL_API_KEY is not set."
+                return 1
+            end
+
+            set -l slug $argv[2]
+
+            __url_box "DELETE URL" \
+                "You are about to delete:" \
+                "" \
+                "SLUG  $slug"
+
+            printf "Delete '%s'? [y/N] " "$slug"
+            read -l confirm
+
+            if not string match -qi y -- "$confirm"
+                __url_box "DELETE URL" \
+                    "Cancelled." \
+                    "Nothing was deleted."
+                return 0
+            end
+
+            set -l response (curl -fsS \
+                -X DELETE \
+                -H "X-API-Key: $URL_API_KEY" \
+                "$api/$slug" 2>/dev/null)
+
+            if test $status -ne 0
+                __url_error "Failed to delete link."
+                return 1
+            end
+
+            set -l message (echo "$response" | jq -r '.message // "Link deleted."')
+
+            __url_box "URL DELETED" "$message"
+            return 0
+
+        case valid
+            if test (count $argv) -ne 2
+                __url_error "Usage: !url valid <url>"
+                return 1
+            end
+
+            set -l target $argv[2]
+
+            if not string match -rq '^https?://' -- "$target"
+                __url_error \
+                    "Invalid URL format." \
+                    "$target"
+                return 1
+            end
+
+            set -l status_code (curl -o /dev/null \
+                -s \
+                -L \
+                --max-time 10 \
+                -w '%{http_code}' \
+                "$target")
+
+            if test $status_code -ge 200; and test $status_code -lt 400
+                __url_box "URL VALID" \
+                    "STATUS  $status_code" \
+                    "URL     $target"
+                return 0
+            end
+
+            if test "$status_code" = 000
+                __url_error \
+                    "URL is unreachable." \
+                    "$target"
+                return 1
+            end
+
+            __url_error \
+                "HTTP $status_code" \
+                "$target"
+
+            return 1
+    end
+
     set -l verbose false
     set -l target ""
     set -l slug ""
@@ -35,6 +490,7 @@ function !url
     set -l comment ""
 
     set -l i 1
+
     while test $i -le (count $argv)
         set -l arg $argv[$i]
 
@@ -44,26 +500,32 @@ function !url
 
             case -s --slug
                 set i (math $i + 1)
+
                 if test $i -gt (count $argv)
-                    echo "ERROR: Slug requires a value."
+                    __url_error "Slug requires a value."
                     return 1
                 end
+
                 set slug "$argv[$i]"
 
             case -p --password
                 set i (math $i + 1)
+
                 if test $i -gt (count $argv)
-                    echo "ERROR: Password requires a value."
+                    __url_error "Password requires a value."
                     return 1
                 end
+
                 set password "$argv[$i]"
 
             case -e --expiry
                 set i (math $i + 1)
+
                 if test $i -gt (count $argv)
-                    echo "ERROR: Expiry requires a value."
+                    __url_error "Expiry requires a value."
                     return 1
                 end
+
                 set expiry "$argv[$i]"
 
             case --unsafe -unsafe
@@ -74,33 +536,39 @@ function !url
 
             case -t --title
                 set i (math $i + 1)
+
                 if test $i -gt (count $argv)
-                    echo "ERROR: Title requires a value."
+                    __url_error "Title requires a value."
                     return 1
                 end
+
                 set title "$argv[$i]"
 
             case -d --desc --description
                 set i (math $i + 1)
+
                 if test $i -gt (count $argv)
-                    echo "ERROR: Description requires a value."
+                    __url_error "Description requires a value."
                     return 1
                 end
+
                 set description "$argv[$i]"
 
             case -c --comment
                 set i (math $i + 1)
+
                 if test $i -gt (count $argv)
-                    echo "ERROR: Comment requires a value."
+                    __url_error "Comment requires a value."
                     return 1
                 end
+
                 set comment "$argv[$i]"
 
             case "*"
                 if test -z "$target"
                     set target "$arg"
                 else
-                    echo "ERROR: Multiple URLs supplied."
+                    __url_error "Multiple URLs supplied."
                     return 1
                 end
         end
@@ -109,35 +577,19 @@ function !url
     end
 
     if test -z "$target"
-        echo "Usage: !url [options] <url>"
-        echo
-        echo "Options:"
-        echo "  -v, --verbose             Detailed output"
-        echo "  -s, --slug <value>        Custom slug"
-        echo "  -p, --password <value>    Password-protect link"
-        echo "  -e, --expiry <duration>   Expiry: 20m, 5h, 1d"
-        echo "      --unsafe              Mark link as unsafe"
-        echo "      --cloak               Enable cloaking"
-        echo "  -t, --title <value>       Link title"
-        echo "  -d, --desc <value>        Link description"
-        echo "  -c, --comment <value>     Link comment"
+        __url_help
         return 1
     end
 
     if not set -q URL_API_KEY
-        printf "ERROR: URL_API_KEY is not set.\n"
-        printf "Please contact me to provide you with an account.\n"
-        printf "E-Mail: pkw@sudopkw.dev\n"
-        printf "Discord: pkw.gov\n"
+        __url_error \
+            "URL_API_KEY is not set." \
+            "" \
+            "Please contact me to provide you with an account." \
+            "E-Mail: pkw@sudopkw.dev" \
+            "Discord: pkw.gov"
         return 1
     end
-
-    set -l theme ~/.local/state/omarchy/current/theme/colors.toml
-    set -l accent (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
-    set -l foreground (string match -r '^foreground[[:space:]]*=[[:space:]]*"([^"]+)"' < $theme)[2]
-
-    test -n "$accent"; or set accent normal
-    test -n "$foreground"; or set foreground normal
 
     set -l expiration_ms ""
 
@@ -145,11 +597,9 @@ function !url
         set -l match (string match -r '^([0-9]+)([mhd])$' "$expiry")
 
         if test (count $match) -ne 3
-            set_color $accent
-            printf "✘ "
-            set_color $foreground
-            printf "Invalid expiry. Use formats like 20m, 5h or 1d.\n"
-            set_color normal
+            __url_error \
+                "Invalid expiry." \
+                "Use formats like 20m, 5h or 1d."
             return 1
         end
 
@@ -202,11 +652,7 @@ function !url
         "$api" 2>/dev/null)
 
     if test $status -ne 0
-        set_color $accent
-        printf "✘ "
-        set_color $foreground
-        printf "Failed to connect to Syano.\n"
-        set_color normal
+        __url_error "Failed to connect to Syano."
         return 1
     end
 
@@ -214,385 +660,30 @@ function !url
     set -l short_url (echo "$response" | jq -r '.data.short_url // empty')
 
     if test "$success" != true; or test -z "$short_url"
-        set_color $accent
-        printf "✘ "
-        set_color $foreground
-        printf "Failed to create short URL.\n"
-        set_color normal
+        __url_error "Failed to create short URL."
         return 1
     end
 
     if test "$verbose" = false
-        set_color $foreground
-        printf " ➜ "
-        set_color $accent
-        printf "%s\n" "$short_url"
-        set_color normal
+        __url_box "URL SHORTENER" \
+            "SOURCE  $target" \
+            "SHORT   $short_url"
         return 0
     end
 
     set -l rows
-    set -a rows "  SOURCE   $target"
-    set -a rows "  SHORT    $short_url"
 
-    test -n "$slug"; and set -a rows "  SLUG     $slug"
-    test -n "$title"; and set -a rows "  TITLE    $title"
-    test -n "$description"; and set -a rows "  DESC     $description"
-    test -n "$comment"; and set -a rows "  COMMENT  $comment"
-    test -n "$password"; and set -a rows "  PASSWORD protected"
-    test -n "$expiry"; and set -a rows "  EXPIRY   $expiry"
-    test "$unsafe" = true; and set -a rows "  UNSAFE   yes"
-    test "$cloaking" = true; and set -a rows "  CLOAK    enabled"
-
-    set -l width 0
-
-    for row in $rows
-        set -l length (string length -- $row)
-        test $length -le $width; or set width $length
-    end
-
-    set -l header "  ── URL SHORTENER"
-    set -l header_length (string length -- $header)
-
-    test $header_length -le $width; or set width $header_length
-    set width (math $width + 2)
-
-    set -l border (string repeat -n $width "─")
-
-    printf "\n"
-
-    set_color $accent
-    printf "╭%s╮\n" "$border"
-
-    set -l length (string length -- $header)
-    set -l padding (math $width - $length - 1)
-
-    set_color $accent
-    printf "│ %s" "$header"
-
-    if test $padding -gt 0
-        set_color $foreground
-        printf "%*s" $padding ""
-    end
-
-    set_color $accent
-    printf "│\n"
-
-    printf "│"
-    set_color $foreground
-    printf "%*s" $width ""
-    set_color $accent
-    printf "│\n"
-
-    for row in $rows
-        set -l length (string length -- $row)
-        set -l padding (math $width - $length)
-
-        if test $padding -gt 0
-            set row "$row"(string repeat -n $padding " ")
-        end
-
-        set_color $accent
-        printf "│"
-
-        set_color $foreground
-        printf "%s" "$row"
-
-        set_color $accent
-        printf "│\n"
-    end
-
-    printf "│"
-    set_color $foreground
-    printf "%*s" $width ""
-    set_color $accent
-    printf "│\n"
-
-    set_color $accent
-    printf "╰%s╯\n" "$border"
-
-    set_color normal
-    printf "\n"
-end
-
-function !urlcheck
-    # description: Check a short URL
-    # category: LINKS
-
-    if test (count $argv) -ne 1
-        echo "Usage: !urlcheck <slug>"
-        return 1
-    end
-
-    if not set -q URL_API_KEY
-        echo "ERROR: URL_API_KEY is not set."
-        return 1
-    end
-
-    set -l slug $argv[1]
-    set -l response (curl -fsS \
-        -H "X-API-Key: $URL_API_KEY" \
-        "https://s.sudopkw.dev/api/v1/links/$slug" 2>/dev/null)
-
-    if test $status -ne 0
-        echo "ERROR: Link not found or request failed."
-        return 1
-    end
-
-    set -l url (echo "$response" | jq -r '.data.url // empty')
-    set -l short (echo "$response" | jq -r '.data.short_url // empty')
-
-    if test -z "$url"
-        echo "ERROR: Link not found."
-        return 1
-    end
-
-    set_color (string match -r '^accent[[:space:]]*=[[:space:]]*"([^"]+)"' < ~/.local/state/omarchy/current/theme/colors.toml)[2]
-    printf " ➜ "
-    printf "%s\n" "$short"
-    set_color normal
-    printf "   %s\n" "$url"
-end
-
-function !urlinfo
-    # description: Show information about a short URL
-    # category: LINKS
-
-    if test (count $argv) -ne 1
-        echo "Usage: !urlinfo <slug>"
-        return 1
-    end
-
-    if not set -q URL_API_KEY
-        echo "ERROR: URL_API_KEY is not set."
-        return 1
-    end
-
-    set -l response (curl -fsS \
-        -H "X-API-Key: $URL_API_KEY" \
-        "https://s.sudopkw.dev/api/v1/links/$argv[1]" 2>/dev/null)
-
-    if test $status -ne 0
-        echo "ERROR: Failed to fetch link."
-        return 1
-    end
-
-    echo "$response" | jq -r '
-        .data |
-        "SLUG        \(.slug)",
-        "URL         \(.url)",
-        "SHORT       \(.short_url)",
-        "TITLE       \(.title // "-")",
-        "DESCRIPTION \(.description // "-")",
-        "COMMENT     \(.comment // "-")",
-        "EXPIRATION  \(.expiration // "never")",
-        "CLOAKING    \(.cloaking)",
-        "QUERY       \(.redirect_with_query)",
-        "CREATED     \(.created_at)",
-        "UPDATED     \(.updated_at)"
-    '
-end
-
-function !urlstats
-    # description: Show analytics for a short URL
-    # category: LINKS
-
-    if test (count $argv) -lt 1; or test (count $argv) -gt 3
-        echo "Usage: !urlstats <slug> [start_date] [end_date]"
-        return 1
-    end
-
-    if not set -q URL_API_KEY
-        echo "ERROR: URL_API_KEY is not set."
-        return 1
-    end
-
-    set -l endpoint "https://s.sudopkw.dev/api/v1/analytics/$argv[1]"
-
-    if test (count $argv) -ge 2
-        set endpoint "$endpoint?start_date="(string escape --style=url "$argv[2]")
-    end
-
-    if test (count $argv) -eq 3
-        set endpoint "$endpoint&end_date="(string escape --style=url "$argv[3]")
-    end
-
-    set -l response (curl -fsS \
-        -H "X-API-Key: $URL_API_KEY" \
-        "$endpoint" 2>/dev/null)
-
-    if test $status -ne 0
-        echo "ERROR: Failed to fetch analytics."
-        return 1
-    end
-
-    echo "$response" | jq -r '
-        .data |
-        "LINK: \(.link.short_url // .link.slug)",
-        "",
-        "TOTAL CLICKS: \(.summary.total_clicks)",
-        "",
-        "BY DATE",
-        (.clicks_by_date[] | "  \(.date): \(.clicks)"),
-        "",
-        "BY COUNTRY",
-        (.clicks_by_country[] | "  \(.country // "Unknown"): \(.clicks)"),
-        "",
-        "BY DEVICE",
-        (.clicks_by_device[] | "  \(.device // "Unknown"): \(.clicks)"),
-        "",
-        "BY BROWSER",
-        (.clicks_by_browser[] | "  \(.browser // "Unknown"): \(.clicks)")
-    '
-end
-
-function !urllist
-    # description: List your shortened URLs
-    # category: LINKS
-
-    if not set -q URL_API_KEY
-        echo "ERROR: URL_API_KEY is not set."
-        return 1
-    end
-
-    set -l limit 50
-    set -l search ""
-
-    for arg in $argv
-        switch $arg
-            case -n --limit
-                set limit $argv[(contains -i -- $arg $argv) + 1]
-            case -s --search
-                set search $argv[(contains -i -- $arg $argv) + 1]
-            case "*"
-                echo "Usage: !urllist [-n|--limit <number>] [-s|--search <query>]"
-                return 1
-        end
-    end
-
-    set -l endpoint "https://s.sudopkw.dev/api/v1/links?limit=$limit"
-
-    if test -n "$search"
-        set endpoint "$endpoint&search="(string escape --style=url "$search")
-    end
-
-    set -l response (curl -fsS \
-        -H "X-API-Key: $URL_API_KEY" \
-        "$endpoint" 2>/dev/null)
-
-    if test $status -ne 0
-        echo "ERROR: Failed to fetch links."
-        return 1
-    end
-
-    echo "$response" | jq -r '
-        .data[] |
-        "\(.slug)\t\(.short_url)\t\(.click_count) clicks"
-    ' | column -t -s (printf '\t')
-end
-
-function !urlfind
-    # description: Search shortened URLs
-    # category: LINKS
-
-    if test (count $argv) -lt 1
-        echo "Usage: !urlfind <query>"
-        return 1
-    end
-
-    if not set -q URL_API_KEY
-        echo "ERROR: URL_API_KEY is not set."
-        return 1
-    end
-
-    set -l query (string join " " -- $argv)
-    set -l encoded (string escape --style=url "$query")
-
-    set -l response (curl -fsS \
-        -H "X-API-Key: $URL_API_KEY" \
-        "https://s.sudopkw.dev/api/v1/links/search?q=$encoded&limit=50" 2>/dev/null)
-
-    if test $status -ne 0
-        echo "ERROR: Search failed."
-        return 1
-    end
-
-    echo "$response" | jq -r '
-        .data[] |
-        "\(.slug)\t\(.url)"
-    ' | column -t -s (printf '\t')
-end
-
-function !rmurl
-    # description: Delete a shortened URL
-    # category: LINKS
-
-    if test (count $argv) -ne 1
-        echo "Usage: !rmurl <slug>"
-        return 1
-    end
-
-    if not set -q URL_API_KEY
-        echo "ERROR: URL_API_KEY is not set."
-        return 1
-    end
-
-    set -l slug $argv[1]
-
-    printf "Delete '%s'? [y/N] " "$slug"
-    read -l confirm
-
-    if not string match -qi y -- "$confirm"
-        echo "Cancelled."
-        return 0
-    end
-
-    set -l response (curl -fsS \
-        -X DELETE \
-        -H "X-API-Key: $URL_API_KEY" \
-        "https://s.sudopkw.dev/api/v1/links/$slug" 2>/dev/null)
-
-    if test $status -ne 0
-        echo "ERROR: Failed to delete link."
-        return 1
-    end
-
-    echo "$response" | jq -r '.message // "Link deleted."'
-end
-
-function !urlvalid
-    # description: Check whether a URL is reachable
-    # category: LINKS
-
-    if test (count $argv) -ne 1
-        echo "Usage: !urlvalid <url>"
-        return 1
-    end
-
-    set -l target $argv[1]
-
-    if not string match -rq '^https?://' -- "$target"
-        echo "✘ Invalid URL format."
-        return 1
-    end
-
-    set -l status_code (curl -o /dev/null \
-        -s \
-        -L \
-        --max-time 10 \
-        -w '%{http_code}' \
-        "$target")
-
-    if test $status_code -ge 200; and test $status_code -lt 400
-        echo "➜ Valid [$status_code] $target"
-        return 0
-    end
-
-    if test "$status_code" = 000
-        echo "✘ Unreachable $target"
-        return 1
-    end
-
-    echo "✘ HTTP $status_code $target"
-    return 1
+    set -a rows "SOURCE   $target"
+    set -a rows "SHORT    $short_url"
+
+    test -n "$slug"; and set -a rows "SLUG     $slug"
+    test -n "$title"; and set -a rows "TITLE    $title"
+    test -n "$description"; and set -a rows "DESC     $description"
+    test -n "$comment"; and set -a rows "COMMENT  $comment"
+    test -n "$password"; and set -a rows "PASSWORD protected"
+    test -n "$expiry"; and set -a rows "EXPIRY   $expiry"
+    test "$unsafe" = true; and set -a rows "UNSAFE   yes"
+    test "$cloaking" = true; and set -a rows "CLOAK    enabled"
+
+    __url_box "URL SHORTENER" $rows
 end
