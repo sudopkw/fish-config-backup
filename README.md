@@ -124,7 +124,7 @@ Including any new commands and aliases you may add (Assuming that you follow the
 <img width="777" height="911" alt="image" src="https://github.com/user-attachments/assets/f5aefed3-2349-4236-9ac9-952d0661a35b" />
 ## Weather
 A weather box/TUI (Not interactive) which pulls the weather for today, And the next 2 days using wttr.in!
-It's pretty simple, But hey it's probably faster than going to your browser and looking up your weather. (again, Probably, you may just have hands that move at the speed of light):w
+It's pretty simple, But hey it's probably faster than going to your browser and looking up your weather. (again, Probably, you may just have hands that move at the speed of light)
 <img width="786" height="431" alt="image" src="https://github.com/user-attachments/assets/b9ca8076-3a4c-4cda-9969-381ee575f082" />
 
 
