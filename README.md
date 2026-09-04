@@ -1,4 +1,4 @@
-## NOTE: This config is mainly for OMARCHY. ( EW OMARCHY!!!!! HOW COULD YOU USE THIZ!! BLOAT!!!!!!!!!!!!!!!!! )
+## NOTE: This config is mainly for OMARCHY.
 > It is possible for you to use it on other systems, but you might have to get your hands dirty and rewrite some of it / remove or replace some things
 
 
