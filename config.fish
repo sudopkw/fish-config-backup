@@ -171,7 +171,23 @@ function fish_greeting
         "1337 4 3/3|2, $USER!" \
         "No way! Is that $USER??!!11!!11!!" \
         "Remember to update your config, $USER!" \
-        "Access Authorized! Welcome back, $USER."
+        "Access Authorized! Welcome back, $USER." \
+        "Maybe i should really make the greetings a seperate file, What do you think $USER?" \
+        "Keep it pushing, $USER" \
+        "Back so soon, $USER?" \
+        "The shell has spoken: hello, $USER" \
+        "Who the hell gave $USER terminal access?!" \
+        "Seriously, Who the hell keeps letting $USER in the terminal??!!?!" \
+        "Fishware says hello, $USER!" \
+        "I hope you remembered what you changed yesterday, $USER" \
+        "User found. Unfortunately, it's $USER" \
+        "Another day of pretending to know what we're doing, $USER? " \
+        "Nice terminal. Would be a shame if something happened to it, $USER." \
+        "The terminal remembers, $USER" \
+        "Your config survived another day, $USER" \
+        "Different user, same questionable decisions. Welcome, $USER" \
+        "Oh, we're doing this again, $USER?" \
+        "One !ucfg a day keeps pkw away, $USER!"
 
     set -l quote $greetings[(random 1 (count $greetings))]
 
