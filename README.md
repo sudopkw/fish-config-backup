@@ -13,12 +13,13 @@ curl -fsSL https://raw.githubusercontent.com/sudopkw/pkw-fishware/main/config.fi
   -o ~/.config/fish/config.fish
 ```
 ## Quick information:
+```
 > The accent color (color of the boxes, etc.) changes with your Omarchy theme
 > Modules are separate, installed with the !modules command
 > They will not be forcefully installed onto your system if you don't plan to use them
 > The current configuration is for Omarchy Quattro!
 > This configuration is still work in progress
-
+```
 # HOW 2 MY CUSTOM FUNCTIONZ!!!!!!!!!!!!
 ```
 ## step 1: create a personal.fish file
